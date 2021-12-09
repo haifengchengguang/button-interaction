@@ -14,7 +14,9 @@ public class globlaScript : MonoBehaviour
     bool isVrPlayer;
 
     byte[] buffer = new byte[1024];
-    int i = 0;
+    //int i = 0;
+
+    float x = 0, y = 0, z = 0;
 
     private void Awake()
     {
@@ -53,31 +55,29 @@ public class globlaScript : MonoBehaviour
                 }
                 else if (instruction.Equals("./location"))//收位置信息
                 {
-                    /*
+                    
                     int lx = me.Receive(buffer);
-                    double x = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
+                    x = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
                     int ly = me.Receive(buffer);
-                    double y = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
+                    y = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
                     int lz = me.Receive(buffer);
-                    double z = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
+                    z = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
                     Debug.Log("./location x=" + x + "      y=" + y + "     z=" + z);
 
-                    //检测
-                    */
+                    //修改坐标在update
+                    
                 }
                 else if (instruction.Equals("./hand"))//收手势信息
                 {
                     int lx = me.Receive(buffer);
-                    String str = Encoding.ASCII.GetString(buffer, 0, lx);
-                    //Debug.Log("收到的第一个数据:"+str);//**************************************************Receive的时候，服务端发送了n条消息，一下全接收了
                     double x = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
                     int ly = me.Receive(buffer);
                     double y = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
                     int lz = me.Receive(buffer);
                     double z = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
-                    Debug.Log("./location x=" + x + "      y=" + y + "     z=" + z);
+                    
+                    //判断放在update
                 }
-                //Encoding.ASCII.GetBytes("Server Say Hello");
             }
         } catch (Exception e)
         {
@@ -106,7 +106,9 @@ public class globlaScript : MonoBehaviour
     void Update()
     {
         //i++;
-        transform.Translate(Vector3.forward*(i%5), Space.World);//Slef和World都是一直在反复运动
+        //transform.Translate(Vector3.forward*(i%5), Space.World);//Slef和World都是一直在反复运动
+        transform.Translate(new Vector3(x*0.5f,y*0.5f,z*0.5f), Space.World);//Slef和World都是一直在反复运动
+        Debug.Log("./location x=" + x + "             y=" + y + "            z=" + z);
         //每隔deltaTime长时间更新坐标
     }
 }
