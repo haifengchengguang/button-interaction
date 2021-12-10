@@ -62,7 +62,7 @@ public class globlaScript : MonoBehaviour
                     y = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
                     int lz = me.Receive(buffer);
                     z = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
-                    Debug.Log("./location x=" + x + "      y=" + y + "     z=" + z);
+                    //Debug.Log("./location x=" + x + "      y=" + y + "     z=" + z);
 
                     //修改坐标在update
                     
@@ -70,11 +70,11 @@ public class globlaScript : MonoBehaviour
                 else if (instruction.Equals("./hand"))//收手势信息
                 {
                     int lx = me.Receive(buffer);
-                    double x = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
+                    double handx = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
                     int ly = me.Receive(buffer);
-                    double y = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
+                    double handy = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
                     int lz = me.Receive(buffer);
-                    double z = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
+                    double handz = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
                     
                     //判断放在update
                 }
@@ -107,7 +107,7 @@ public class globlaScript : MonoBehaviour
     {
         //i++;
         //transform.Translate(Vector3.forward*(i%5), Space.World);//Slef和World都是一直在反复运动
-        transform.Translate(new Vector3(x*0.5f,y*0.5f,z*0.5f), Space.World);//Slef和World都是一直在反复运动
+        transform.Translate(new Vector3(x*-1.62f*z, y*1.62f*z, z), Space.World);//1.62太大了，现实中移动了1m，游戏中移动了3m+，不太合理，但是要求是重定向，在游戏内可以走很远。映射到unity里6*6如何，8*8？
         Debug.Log("./location x=" + x + "             y=" + y + "            z=" + z);
         //每隔deltaTime长时间更新坐标
     }
