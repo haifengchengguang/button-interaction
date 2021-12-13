@@ -14,3 +14,15 @@
 6.  git push                       完成提交
 
 
+#创建本地分支
+git branch [分支名]
+#查看当前分支
+git branch
+#跳转到想要跳转的分支
+git checkout [分支名]
+#开始上传之前的步骤
+git add .
+#继续
+git commit -m '想要写的话--这次完成了啥'
+#上传到线上的分支
+git push origin [分支名]

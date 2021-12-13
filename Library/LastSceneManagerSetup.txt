@@ -2,7 +2,7 @@ sceneSetups:
 - path: Assets/Scenes/SampleScene.unity
   isLoaded: 1
   isActive: 1
-- path: Assets/GoogleVR/Demos/Scenes/HelloVR.unity
+- path: Assets/Scenes/HelloVR.unity
   isLoaded: 0
   isActive: 0
 - path: Assets/Scenes/Observer.unity
