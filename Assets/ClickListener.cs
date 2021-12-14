@@ -22,16 +22,25 @@ public class ClickListener : MonoBehaviour
     private byte[] transformedImgBytes;
     private Texture2D transformTexture;
     private bool transformed = false;
+    private bool selecting = false;
+
+    private bool fourSelected = false;
+    Vector2 tl;
+    Vector2 tr;
+    Vector2 br;
+    Vector2 bl;
+
 
     int count = 0;
     bool photoed = false;
     bool open = false;
+    private int updatePosition = -1;
 
 
     public UnityEngine.UI.Text textTest;
     // 图片组件
     public RawImage rawImage;
-    public RawImage testRaw;
+    public Text tipText;
     public GameObject wallPanel;
 
     //屏幕信息
@@ -58,6 +67,8 @@ public class ClickListener : MonoBehaviour
 
 
         wallPanel.SetActive(false);
+
+        tipText.text = Input.touchSupported.ToString();
 
     }
 
@@ -104,6 +115,9 @@ public class ClickListener : MonoBehaviour
         else
         {
             currentWebCam.Stop();
+            Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
+            inputTexture.LoadImage(imgBytes);
+            rawImage.texture = inputTexture;
             count++;
             open = false;
         }
@@ -178,20 +192,20 @@ public class ClickListener : MonoBehaviour
                 File.WriteAllBytes(Application.persistentDataPath+"/transformm.jpg",result.ToBytes());
                 */
 
-
+                /*
                 Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
                 inputTexture.LoadImage(imgBytes);
                 Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
                 Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
                 Utils.texture2DToMat(inputTexture, inputMat);
-
+                */
                 //原代码-自动识别
-                
+
                 //Texture2D inputTexture = Resources.Load("inputTexture") as Texture2D;
                 //Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
                 //Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
                 //Utils.texture2DToMat(inputTexture, inputMat);
-
+                /*
                 Imgproc.cvtColor(inputMat, outputMat, Imgproc.COLOR_RGB2GRAY);
 
                 Imgproc.Canny(outputMat, outputMat, 100, 150);
@@ -247,14 +261,14 @@ public class ClickListener : MonoBehaviour
                 }
                 print("continue");
                 Vector2 center = Vector2.zero;
-                /*
-                                for (int i = 0; i < corners.Count; i++)
-                                {
-                                    center += corners[i];
-                                }
-                                center *= 0.25f;
-                                SortCorners(ref corners, center);
-                */
+                
+                                //for (int i = 0; i < corners.Count; i++)
+                                //{
+                                //    center += corners[i];
+                                //}
+                                //center *= 0.25f;
+                                //SortCorners(ref corners, center);
+                
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -268,7 +282,7 @@ public class ClickListener : MonoBehaviour
                 Vector2 tr = corners[1];
                 Vector2 br = corners[2];
                 Vector2 bl = corners[3];
-                
+                */
 
                 /*
                 //以上部分是自动识别四个点的代码，但是好像有一点问题。
@@ -279,6 +293,32 @@ public class ClickListener : MonoBehaviour
                 Vector2 bl = new Vector2(100,50);
                 */
 
+                updatePosition = 0;
+                //Thread thread = new Thread(waitForSelect);
+                //thread.Start(inputMat);
+                //StartCoroutine(waitForSelect(inputMat));
+                /*
+                Vector2 tl = Input.mousePosition;
+                Vector2 tr = Input.mousePosition;
+                Vector2 br = Input.mousePosition;
+                Vector2 bl = Input.mousePosition;
+                */
+                /*
+                Vector2 tl = Input.GetTouch(0).position;
+                Vector2 tr = Input.GetTouch(0).position;
+                Vector2 br = Input.GetTouch(0).position;
+                Vector2 bl = Input.GetTouch(0).position;
+                */
+                /*
+                print(tl.x + "  " + tl.y);
+                print(tr.x + "  " + tr.y);
+                print(br.x + "  " + br.y);
+                print(bl.x + "  " + bl.y);
+                //Vector2 tl = new Vector2(200, 600);
+                //Vector2 tr = new Vector2(500, 700);
+                //Vector2 br = new Vector2(700, 200);
+                //Vector2 bl = new Vector2(100, 50);
+
                 Mat srcRectMat = new Mat(4, 1, CvType.CV_32FC2);
                 Mat dstRectMat = new Mat(4, 1, CvType.CV_32FC2);
 
@@ -288,9 +328,9 @@ public class ClickListener : MonoBehaviour
 
                 Mat perspectiveTransform = Imgproc.getPerspectiveTransform(srcRectMat, dstRectMat);
                 Mat outputMat0 = inputMat.clone();
-
+                /*
                 //圈出四个顶点
-                Point t = new Point(tl.x,tl.y);
+                Point t = new Point(tl.x, tl.y);
                 Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
                 t = new Point(tr.x, tr.y);
                 Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
@@ -300,26 +340,115 @@ public class ClickListener : MonoBehaviour
                 Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
 
                 print("circled");
-
+                */
                 //进行透视转换
+                /*
                 Imgproc.warpPerspective(inputMat, outputMat0, perspectiveTransform, new Size(inputMat.rows(), inputMat.cols()));
 
                 Texture2D outputTexture = new Texture2D(outputMat0.cols(), outputMat0.rows(), TextureFormat.RGBA32, false);
                 Utils.matToTexture2D(outputMat0, outputTexture);
 
                 rawImage.texture = outputTexture;//显示到rawImage上。
-                //rawImage.material.mainTexture = outputTexture;
-                //transformTexture = outputTexture;
-                //transformed = true;
-                //gameObject.GetComponent<Renderer>().material.mainTexture = outputTexture;
+                                                 //rawImage.material.mainTexture = outputTexture;
+                                                 //transformTexture = outputTexture;
+                                                 //transformed = true;
+                                                 //gameObject.GetComponent<Renderer>().material.mainTexture = outputTexture;
                 transformedImgBytes = outputTexture.EncodeToJPG();
                 File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", transformedImgBytes);
+                fourSelected = false;
+                */
             }
             catch (Exception e)
             {
 
             }
         }
+    }
+
+    private void ContinueTransform()
+    {
+        Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
+        inputTexture.LoadImage(imgBytes);
+        Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
+        Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
+        Utils.texture2DToMat(inputTexture, inputMat);
+
+        Imgproc.cvtColor(inputMat, outputMat, Imgproc.COLOR_RGB2GRAY);
+
+        Imgproc.Canny(outputMat, outputMat, 100, 150);
+
+        Mat lines = new Mat();
+        //第五个参数是阈值，通过调整阈值大小可以过滤掉一些干扰线
+        //Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 180, 60, 50, 10);
+        Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 120, 50, 50, 30);
+        //计算霍夫曼线外围的交叉点
+        int[] linesArray = new int[lines.cols() * lines.rows() * lines.channels()];
+        lines.get(0, 0, linesArray);
+        
+        for (int i = 0; i < linesArray.Length - 4; i = i + 4)
+        {
+            Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0), 5);//绿色
+        }
+
+        //为了检测是不是没点准的问题，画一下自己点的位置。
+        Imgproc.circle(inputMat, new Point(tl.x, 800-tl.y), 5, new Scalar(255, 0, 0));
+        Imgproc.circle(inputMat, new Point(tr.x, 800-tr.y), 5, new Scalar(255, 0, 0));
+        Imgproc.circle(inputMat, new Point(br.x, 800-br.y), 5, new Scalar(255, 0, 0));
+        Imgproc.circle(inputMat, new Point(bl.x, 800-bl.y), 5, new Scalar(255, 0, 0));
+
+        Texture2D testT = new Texture2D(borderRawImage, borderRawImage, TextureFormat.RGBA32, false);
+        Utils.matToTexture2D(inputMat, testT);
+        byte[] testImg = testT.EncodeToJPG();
+        File.WriteAllBytes(Application.persistentDataPath + "/selectCircle.jpg", testImg);
+
+        print(tl.x + "  " + tl.y);
+        print(tr.x + "  " + tr.y);
+        print(br.x + "  " + br.y);
+        print(bl.x + "  " + bl.y);
+
+        //Vector2 tl = new Vector2(200, 600);
+        //Vector2 tr = new Vector2(500, 700);
+        //Vector2 br = new Vector2(700, 200);
+        //Vector2 bl = new Vector2(100, 50);
+
+        Mat srcRectMat = new Mat(4, 1, CvType.CV_32FC2);
+        Mat dstRectMat = new Mat(4, 1, CvType.CV_32FC2);
+
+        //srcRectMat.put(0, 0, tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y);
+        srcRectMat.put(0, 0, bl.x, bl.y, br.x, br.y, tr.x, tr.y, tl.x, tl.y);
+        //dstRectMat.put(0, 0, 0.0, inputMat.rows(), inputMat.cols(), inputMat.rows(), inputMat.rows(), 0, 0.0, 0.0);
+        dstRectMat.put(0, 0, 100, 700, 700, 700, 700, 100, 100, 100);
+
+        Mat perspectiveTransform = Imgproc.getPerspectiveTransform(srcRectMat, dstRectMat);
+        Mat outputMat0 = inputMat.clone();
+        /*
+        //圈出四个顶点
+        Point t = new Point(tl.x, tl.y);
+        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+        t = new Point(tr.x, tr.y);
+        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+        t = new Point(bl.x, bl.y);
+        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+        t = new Point(br.x, br.y);
+        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+
+        print("circled");
+        */
+        //进行透视转换
+        Imgproc.warpPerspective(inputMat, outputMat0, perspectiveTransform, new Size(inputMat.rows(), inputMat.cols()));
+
+        Texture2D outputTexture = new Texture2D(outputMat0.cols(), outputMat0.rows(), TextureFormat.RGBA32, false);
+        Utils.matToTexture2D(outputMat0, outputTexture);
+
+        rawImage.texture = outputTexture;//显示到rawImage上。
+                                         //rawImage.material.mainTexture = outputTexture;
+                                         //transformTexture = outputTexture;
+                                         //transformed = true;
+                                         //gameObject.GetComponent<Renderer>().material.mainTexture = outputTexture;
+        transformedImgBytes = outputTexture.EncodeToJPG();
+        File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", transformedImgBytes);
+        fourSelected = false;
+        print("end of Continue()");
     }
 
     public IEnumerator GetTexture()
@@ -336,7 +465,16 @@ public class ClickListener : MonoBehaviour
 
     public void SelectWall()
     {
-        wallPanel.SetActive(true);
+        print("点击了手选");
+        selecting = !selecting;
+        if(selecting)
+        {
+            wallPanel.SetActive(true);
+        }
+        else
+        {
+            wallPanel.SetActive(false);
+        }
     }
 
 
@@ -344,6 +482,36 @@ public class ClickListener : MonoBehaviour
     void Update()
     {
         
+        if(updatePosition == 0 && Input.GetMouseButtonDown(0))
+        {
+            tl.x = Input.mousePosition.x - 300;
+            tl.y = Input.mousePosition.y - 140;
+            updatePosition++;
+            print(tl.x + "  " + tl.y);
+        }
+        else if(updatePosition == 1 && Input.GetMouseButtonDown(0))
+        {
+            tr.x = Input.mousePosition.x - 300;
+            tr.y = Input.mousePosition.y - 140;
+            updatePosition++;
+            print(tr.x + "  " + tr.y);
+        }
+        else if(updatePosition == 2 && Input.GetMouseButtonDown(0))
+        {
+            br.x = Input.mousePosition.x - 300;
+            br.y = Input.mousePosition.y - 140;
+            updatePosition++;
+            print(br.x + "  " + br.y);
+        }
+        else if(updatePosition == 3 && Input.GetMouseButtonDown(0))
+        {
+            bl.x = Input.mousePosition.x - 300;
+            bl.y = Input.mousePosition.y - 140;
+            updatePosition = 4;
+            fourSelected = true;
+            ContinueTransform();
+            print(bl.x + "  " + bl.y);
+        }
     }
 
     private void OnGUI()
