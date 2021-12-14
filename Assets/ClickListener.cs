@@ -19,6 +19,7 @@ public class ClickListener : MonoBehaviour
     //透视变换  顶点？？
     private List<Vector2> corners = new List<Vector2>();
     private byte[] imgBytes;
+    private byte[] transformedImgBytes;
     private Texture2D transformTexture;
     private bool transformed = false;
 
@@ -30,6 +31,8 @@ public class ClickListener : MonoBehaviour
     public UnityEngine.UI.Text textTest;
     // 图片组件
     public RawImage rawImage;
+    public RawImage testRaw;
+    public GameObject wallPanel;
 
     //屏幕信息
     int Swidth, Sheight;
@@ -54,7 +57,7 @@ public class ClickListener : MonoBehaviour
         Debug.Log(Screen.height);
 
 
-        //rawImage.GetComponent<RectTransform>().position = new Vector2(-(Swidth/2-200-borderRawImage/2), 0);
+        wallPanel.SetActive(false);
 
     }
 
@@ -175,7 +178,7 @@ public class ClickListener : MonoBehaviour
                 File.WriteAllBytes(Application.persistentDataPath+"/transformm.jpg",result.ToBytes());
                 */
 
-                
+
                 Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
                 inputTexture.LoadImage(imgBytes);
                 Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
@@ -183,11 +186,11 @@ public class ClickListener : MonoBehaviour
                 Utils.texture2DToMat(inputTexture, inputMat);
 
                 //原代码-自动识别
-                /*
-                Texture2D inputTexture = Resources.Load("inputTexture") as Texture2D;
-                Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
-                Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
-                Utils.texture2DToMat(inputTexture, inputMat);
+                
+                //Texture2D inputTexture = Resources.Load("inputTexture") as Texture2D;
+                //Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
+                //Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
+                //Utils.texture2DToMat(inputTexture, inputMat);
 
                 Imgproc.cvtColor(inputMat, outputMat, Imgproc.COLOR_RGB2GRAY);
 
@@ -195,7 +198,8 @@ public class ClickListener : MonoBehaviour
 
                 Mat lines = new Mat();
                 //第五个参数是阈值，通过调整阈值大小可以过滤掉一些干扰线
-                Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 180, 80, 50, 10);
+                //Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 180, 60, 50, 10);
+                Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 120, 100, 100, 30);
                 //计算霍夫曼线外围的交叉点
                 int[] linesArray = new int[lines.cols() * lines.rows() * lines.channels()];
                 lines.get(0, 0, linesArray);
@@ -204,8 +208,15 @@ public class ClickListener : MonoBehaviour
                 List<int> b = new List<int>();
                 for (int i = 0; i < linesArray.Length - 4; i = i + 4)
                 {
-                    Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(255, 0, 0), 2);
+                    Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0), 5);//绿色
                 }
+
+
+                Texture2D testTexture = new Texture2D(inputMat.cols(), inputMat.rows(), TextureFormat.RGBA32, false);
+                Utils.matToTexture2D(inputMat, testTexture);
+                testRaw.texture = testTexture;//显示到rawImage上。
+
+
                 for (int i = 0; i < linesArray.Length; i = i + 4)
                 {
                     a.Add(linesArray[i + 0]);
@@ -219,7 +230,7 @@ public class ClickListener : MonoBehaviour
                         b.Add(linesArray[j + 2]);
                         b.Add(linesArray[j + 3]);
 
-                        Vector2 temp = ComputeIntersect(a, b);
+                        Vector2 temp = ComputeIntersect(a, b);//计算交点坐标
                         b.Clear();
 
                         if (temp.x > 0 && temp.y > 0 && temp.x < 1000 && temp.y < 1000)
@@ -229,34 +240,44 @@ public class ClickListener : MonoBehaviour
                     }
                     a.Clear();
                 }
-                //剔除重合的点和不合理的点
-                CullIllegalPoint(ref corners, 20);
+                CullIllegalPoint(ref corners, 20);//剔除重合的点和不合理的点
                 if (corners.Count != 4)
                 {
                     Debug.Log("The object is not quadrilateral  " + corners.Count);
                 }
+                print("continue");
                 Vector2 center = Vector2.zero;
-                for (int i = 0; i < corners.Count; i++)
+                /*
+                                for (int i = 0; i < corners.Count; i++)
+                                {
+                                    center += corners[i];
+                                }
+                                center *= 0.25f;
+                                SortCorners(ref corners, center);
+                */
+
+                for (int i = 0; i < 4; i++)
                 {
                     center += corners[i];
                 }
                 center *= 0.25f;
                 SortCorners(ref corners, center);
-
+                
                 //计算转换矩阵
                 Vector2 tl = corners[0];
                 Vector2 tr = corners[1];
                 Vector2 br = corners[2];
                 Vector2 bl = corners[3];
-                */
+                
 
-
+                /*
                 //以上部分是自动识别四个点的代码，但是好像有一点问题。
                 //测试像素点--真正用手动/自动还要改代码，这些数值是因为目前图片大小设置的是800。tl=top_left点,br=bottom_right点。
                 Vector2 tl = new Vector2(200,600);
                 Vector2 tr = new Vector2(500,700);
                 Vector2 br = new Vector2(700,200);
                 Vector2 bl = new Vector2(100,50);
+                */
 
                 Mat srcRectMat = new Mat(4, 1, CvType.CV_32FC2);
                 Mat dstRectMat = new Mat(4, 1, CvType.CV_32FC2);
@@ -269,14 +290,16 @@ public class ClickListener : MonoBehaviour
                 Mat outputMat0 = inputMat.clone();
 
                 //圈出四个顶点
-                //Point t = new Point(tl.x,tl.y);
-                //Imgproc.circle(outputMat0, t, 6, new Scalar(0, 0, 255, 255), 2);
-                //t = new Point(tr.x, tr.y);
-                //Imgproc.circle(outputMat0, t, 6, new Scalar(0, 0, 255, 255), 2);
-                //t = new Point(bl.x, bl.y);
-                //Imgproc.circle(outputMat0, t, 6, new Scalar(0, 0, 255, 255), 2);
-                //t = new Point(br.x, br.y);
-                //Imgproc.circle(outputMat0, t, 6, new Scalar(0, 0, 255, 255), 2);
+                Point t = new Point(tl.x,tl.y);
+                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+                t = new Point(tr.x, tr.y);
+                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+                t = new Point(bl.x, bl.y);
+                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+                t = new Point(br.x, br.y);
+                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+
+                print("circled");
 
                 //进行透视转换
                 Imgproc.warpPerspective(inputMat, outputMat0, perspectiveTransform, new Size(inputMat.rows(), inputMat.cols()));
@@ -289,8 +312,8 @@ public class ClickListener : MonoBehaviour
                 //transformTexture = outputTexture;
                 //transformed = true;
                 //gameObject.GetComponent<Renderer>().material.mainTexture = outputTexture;
-                byte[] imgBytes = outputTexture.EncodeToJPG();
-                File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", imgBytes);
+                transformedImgBytes = outputTexture.EncodeToJPG();
+                File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", transformedImgBytes);
             }
             catch (Exception e)
             {
@@ -310,7 +333,13 @@ public class ClickListener : MonoBehaviour
         currentWebCam.Play();
     }
 
-    // 
+
+    public void SelectWall()
+    {
+        wallPanel.SetActive(true);
+    }
+
+
     // Update is called once per frame
     void Update()
     {
