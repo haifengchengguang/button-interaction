@@ -16,7 +16,7 @@ using OpenCVForUnity.UnityUtils;
 
 public class ClickListener : MonoBehaviour
 {
-    //透视变换  顶点？？
+    //透视变换
     private List<Vector2> corners = new List<Vector2>();
     private byte[] imgBytes;
     private byte[] transformedImgBytes;
@@ -24,12 +24,20 @@ public class ClickListener : MonoBehaviour
     private bool transformed = false;
     private bool selecting = false;
 
+    //透视变换点选
     private bool fourSelected = false;
     Vector2 tl;
     Vector2 tr;
     Vector2 br;
     Vector2 bl;
 
+    //墙体按钮信息
+    private ColorBlock defaultColor = new ColorBlock();
+    private ColorBlock clickedColor = new ColorBlock();
+    public static int[] wallsState = new int[24];
+
+    //玩家开始信息
+    public static bool isVRPlayer = true;
 
     int count = 0;
     bool photoed = false;
@@ -37,11 +45,11 @@ public class ClickListener : MonoBehaviour
     private int updatePosition = -1;
 
 
-    public UnityEngine.UI.Text textTest;
-    // 图片组件
+    //场景对象
     public RawImage rawImage;
     public Text tipText;
     public GameObject wallPanel;
+    public Button[] wallButtons = new Button[24];
 
     //屏幕信息
     int Swidth, Sheight;
@@ -65,11 +73,23 @@ public class ClickListener : MonoBehaviour
         Debug.Log(Screen.width);
         Debug.Log(Screen.height);
 
-
+        //默认设置墙体按钮隐藏
         wallPanel.SetActive(false);
 
+        //初始化提示文本
         tipText.text = Input.touchSupported.ToString();
 
+        //初始化按钮颜色
+        defaultColor.normalColor = new Color(217, 171, 171, 18);
+        defaultColor.pressedColor = new Color(217, 171, 171, 18);
+        defaultColor.highlightedColor = new Color(217, 171, 171, 18);
+        defaultColor.disabledColor = new Color(217, 171, 171, 18);
+        defaultColor.colorMultiplier = 0.15f;
+        clickedColor.normalColor = new Color(0, 0, 0, 255);
+        clickedColor.pressedColor = new Color(0, 0, 0, 255);
+        clickedColor.highlightedColor = new Color(0, 0, 0, 255);
+        clickedColor.disabledColor = new Color(0, 0, 0, 255);
+        clickedColor.colorMultiplier = 1;
     }
 
     public IEnumerator Call()
@@ -115,6 +135,7 @@ public class ClickListener : MonoBehaviour
         else
         {
             currentWebCam.Stop();
+            rawImage.color = new Color(255, 255, 255, 255);
             Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
             inputTexture.LoadImage(imgBytes);
             rawImage.texture = inputTexture;
@@ -387,15 +408,15 @@ public class ClickListener : MonoBehaviour
         
         for (int i = 0; i < linesArray.Length - 4; i = i + 4)
         {
-            Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0), 5);//绿色
+            Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0, 255), 5);//绿色
         }
-
+        /*
         //为了检测是不是没点准的问题，画一下自己点的位置。
         Imgproc.circle(inputMat, new Point(tl.x, 800-tl.y), 5, new Scalar(255, 0, 0));
         Imgproc.circle(inputMat, new Point(tr.x, 800-tr.y), 5, new Scalar(255, 0, 0));
         Imgproc.circle(inputMat, new Point(br.x, 800-br.y), 5, new Scalar(255, 0, 0));
         Imgproc.circle(inputMat, new Point(bl.x, 800-bl.y), 5, new Scalar(255, 0, 0));
-
+        */
         Texture2D testT = new Texture2D(borderRawImage, borderRawImage, TextureFormat.RGBA32, false);
         Utils.matToTexture2D(inputMat, testT);
         byte[] testImg = testT.EncodeToJPG();
@@ -462,6 +483,43 @@ public class ClickListener : MonoBehaviour
         currentWebCam.Play();
     }
 
+    public void AutoSelect()
+    {
+        Texture2D img = new Texture2D(800, 800, TextureFormat.RGBA32, false);
+        img.LoadImage(transformedImgBytes);
+        //print(img.GetPixel(175, 245).r*255 + "       " + img.GetPixel(175, 245).g*255 + "      " + img.GetPixel(175, 245).b*255);
+        for (int i = 0; i < 24; i++)
+        {
+            wallsState[i] = 0;
+            wallButtons[i].colors = defaultColor;
+        }
+        for( int i = 0; i < 24; i++)
+        {
+            if(i <= 11)//row
+            {
+                int x = 175 + 150 * (i % 4);
+                int y = 250 + 150 * (i / 4);
+                Color thisPointColor = img.GetPixel(x, y);
+                if (thisPointColor.r * 255 <= 40 && thisPointColor.g * 255 >= 235 && thisPointColor.b * 255 <= 40)
+                {
+                    wallButtons[i].colors = clickedColor;
+                    wallsState[i] = 1;
+                }
+            }
+            else//column
+            {
+                int x = 250 + 150 * ((i-12) % 3);
+                int y = 175 + 150 * ((i-12) / 3);
+                Color thisPointColor = img.GetPixel(x, y);
+                if (thisPointColor.r * 255 <= 40 && thisPointColor.g * 255 >= 235 && thisPointColor.b * 255 <= 40)
+                {
+                    wallButtons[i].colors = clickedColor;
+                    wallsState[i] = 1;
+                }
+            }
+        }
+        wallPanel.SetActive(true);
+    }
 
     public void SelectWall()
     {
@@ -476,6 +534,22 @@ public class ClickListener : MonoBehaviour
             wallPanel.SetActive(false);
         }
     }
+
+
+    public void Reset()
+    {
+        for(int i = 0; i < 24; i++)
+        {
+            wallButtons[i].colors = defaultColor;
+            wallsState[i] = 0;
+        }
+    }
+
+
+
+
+
+
 
 
     // Update is called once per frame
@@ -525,6 +599,20 @@ public class ClickListener : MonoBehaviour
             //GUI.DrawTexture(new UnityEngine.Rect(300, 140, borderRawImage, borderRawImage), transformTexture, ScaleMode.StretchToFill);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     private Vector2 ComputeIntersect(List<int> a, List<int> b)
@@ -628,5 +716,26 @@ public class ClickListener : MonoBehaviour
             }
         }
         return temp;
+    }
+
+    public void WallButtonClick()
+    {
+        print("点击了按钮");
+        //获得按钮
+        GameObject theButton = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject;
+        int index = Convert.ToInt32(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Substring(0));
+        print("stateColor"+wallsState[index]+"  "+wallButtons[index].colors.normalColor.r);
+
+        //更新状态信息
+        if (wallsState[index] == 1)
+        {
+            wallButtons[index].colors = defaultColor;
+            wallsState[index] = 0;
+        }
+        else
+        {
+            wallButtons[index].colors = clickedColor;
+            wallsState[index] = 1;
+        }
     }
 }

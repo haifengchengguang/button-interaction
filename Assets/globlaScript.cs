@@ -9,6 +9,10 @@ using System.Text;
 
 public class globlaScript : MonoBehaviour
 {
+
+    //单例模式--没必要
+    
+
     //public Camera camera;
     Socket socket;
     bool isVrPlayer;
@@ -20,14 +24,23 @@ public class globlaScript : MonoBehaviour
 
     private void Awake()
     {
-        Debug.Log("Awake------------------------------------------------");
-        IPAddress ip = IPAddress.Parse("127.0.0.1");
-        socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        //socket.Connect(new IPEndPoint(ip, 18189)); //配置服务器IP与端口
-        socket.Connect(new IPEndPoint(ip, 8885));
+        try
+        {
+            IPAddress ip = IPAddress.Parse("127.0.0.1");
+            socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //socket.Connect(new IPEndPoint(ip, 18189)); //配置服务器IP与端口
+            socket.Connect(new IPEndPoint(ip, 8885));
 
-        Thread myThread = new Thread(ListenMessage);
-        myThread.Start(socket);
+            Thread myThread = new Thread(ListenMessage);
+            myThread.Start(socket);
+        }
+        catch (Exception e)
+        {
+            Debug.Log(e.Message);
+        }
+
+        //test
+        print(ClickListener.isVRPlayer);
     }
 
     private void ListenMessage(object socket)//======================================================收消息
@@ -36,6 +49,45 @@ public class globlaScript : MonoBehaviour
         try
         {
 
+            //发送墙体信息以及玩家信息!!!!!!!!如果photoed/other是false则不传，因为观察者传了--各种情况要考虑到然后给出信息提示反馈。***************************************
+            //me.Send(Encoding.ASCII.GetBytes("./mode"));
+            //Thread.Sleep(50);
+            me.Send(Encoding.ASCII.GetBytes(ClickListener.isVRPlayer.ToString()));
+            Thread.Sleep(50);
+
+            int count = 0;
+            int[] temps = new int[24];
+            for(int i = 0; i < 24; i++)
+            {
+                if(ClickListener.wallsState[i] == 1)
+                {
+                    temps[count] = i;
+                    count++;
+                }
+            }
+            //只发需要的墙体index
+            //发送总数量
+            me.Send(Encoding.ASCII.GetBytes(count.ToString()));
+            Thread.Sleep(50);
+            for(int i = 0; i < count; i++)
+            {
+                me.Send(Encoding.ASCII.GetBytes(temps[i].ToString()));
+                Thread.Sleep(50);
+            }
+            //入口index，出口index
+            me.Send(Encoding.ASCII.GetBytes("6"));
+            Thread.Sleep(50);
+            me.Send(Encoding.ASCII.GetBytes("15"));
+            Thread.Sleep(50);
+
+
+
+            //如果自己没传则接收墙体
+
+
+
+
+
             while (true)
             {
                 //instruction
@@ -43,17 +95,7 @@ public class globlaScript : MonoBehaviour
                 string instruction = Encoding.ASCII.GetString(buffer, 0, length);
                 //Debug.Log("收到指令=" + instruction);
 
-                if (instruction.Equals("./identity"))//判定身份---应该是自己选择身份
-                {
-                    int l = me.Receive(buffer);
-                    string info = Encoding.ASCII.GetString(buffer, 0, l);
-                    isVrPlayer = Convert.ToBoolean(info);
-                }
-                else if (instruction.Equals("./wall"))//收墙体信息
-                {
-
-                }
-                else if (instruction.Equals("./location"))//收位置信息
+                if (instruction.Equals("./location"))//收位置信息
                 {
                     
                     int lx = me.Receive(buffer);
@@ -67,7 +109,7 @@ public class globlaScript : MonoBehaviour
                     //修改坐标在update
                     
                 }
-                else if (instruction.Equals("./hand"))//收手势信息
+                else if (instruction.Equals("./hand"))//收手势信息--可以改碰撞模式
                 {
                     int lx = me.Receive(buffer);
                     double handx = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
