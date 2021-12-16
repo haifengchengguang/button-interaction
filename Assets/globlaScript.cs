@@ -48,41 +48,48 @@ public class globlaScript : MonoBehaviour
         Socket me = (Socket) socket;
         try
         {
-
-            //发送墙体信息以及玩家信息!!!!!!!!如果photoed/other是false则不传，因为观察者传了--各种情况要考虑到然后给出信息提示反馈。***************************************
+            //或者默认VR传
             //me.Send(Encoding.ASCII.GetBytes("./mode"));
             //Thread.Sleep(50);
             me.Send(Encoding.ASCII.GetBytes(ClickListener.isVRPlayer.ToString()));
             Thread.Sleep(50);
-
-            int count = 0;
-            int[] temps = new int[24];
-            for(int i = 0; i < 24; i++)
+            me.Send(Encoding.ASCII.GetBytes(ClickListener.sureLoadMap.ToString()));
+            if(ClickListener.sureLoadMap)
             {
-                if(ClickListener.wallsState[i] == 1)
+                int count = 0;
+                int[] temps = new int[24];
+                for(int i = 0; i < 24; i++)
                 {
-                    temps[count] = i;
-                    count++;
+                    if(ClickListener.wallsState[i] == 1)
+                    {
+                        temps[count] = i;
+                        count++;
+                    }
                 }
-            }
-            //只发需要的墙体index
-            //发送总数量
-            me.Send(Encoding.ASCII.GetBytes(count.ToString()));
-            Thread.Sleep(50);
-            for(int i = 0; i < count; i++)
-            {
-                me.Send(Encoding.ASCII.GetBytes(temps[i].ToString()));
+                //只发需要的墙体index
+                //发送总数量
+                me.Send(Encoding.ASCII.GetBytes(count.ToString()));
+                Thread.Sleep(50);
+                for(int i = 0; i < count; i++)
+                {
+                    me.Send(Encoding.ASCII.GetBytes(temps[i].ToString()));
+                    Thread.Sleep(50);
+                }
+
+                //入口index，出口index
+                me.Send(Encoding.ASCII.GetBytes("6"));//入口
+                Thread.Sleep(50);
+                me.Send(Encoding.ASCII.GetBytes("0"));//出口
                 Thread.Sleep(50);
             }
-            //入口index，出口index
-            me.Send(Encoding.ASCII.GetBytes("6"));
-            Thread.Sleep(50);
-            me.Send(Encoding.ASCII.GetBytes("15"));
-            Thread.Sleep(50);
+            else
+            {
+                //如果自己没传则接收墙体
+
+            }
 
 
 
-            //如果自己没传则接收墙体
 
 
 

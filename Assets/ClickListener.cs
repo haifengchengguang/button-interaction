@@ -25,7 +25,9 @@ public class ClickListener : MonoBehaviour
     private bool selecting = false;
 
     //透视变换点选
-    private bool fourSelected = false;
+    private bool[] whitchSelected = { false, false, false, false };
+    private bool startSelectFourPoints = false;
+    private bool confirmed = false;
     Vector2 tl;
     Vector2 tr;
     Vector2 br;
@@ -38,18 +40,21 @@ public class ClickListener : MonoBehaviour
 
     //玩家开始信息
     public static bool isVRPlayer = true;
+    public static bool sureLoadMap = false;
 
     int count = 0;
     bool photoed = false;
     bool open = false;
-    private int updatePosition = -1;
+    
 
 
     //场景对象
     public RawImage rawImage;
     public Text tipText;
     public GameObject wallPanel;
+    public GameObject selectPanel;
     public Button[] wallButtons = new Button[24];
+    public Button[] fourSelectButtons = new Button[4];
 
     //屏幕信息
     int Swidth, Sheight;
@@ -75,6 +80,7 @@ public class ClickListener : MonoBehaviour
 
         //默认设置墙体按钮隐藏
         wallPanel.SetActive(false);
+        selectPanel.SetActive(false);
 
         //初始化提示文本
         tipText.text = Input.touchSupported.ToString();
@@ -99,8 +105,8 @@ public class ClickListener : MonoBehaviour
         if (Application.HasUserAuthorization(UserAuthorization.WebCam) && WebCamTexture.devices.Length > 0)
         {
             // 创建相机贴图
-            currentWebCam = new WebCamTexture(WebCamTexture.devices[0].name, 400, 400, 60);
-            rawImage.texture = currentWebCam;
+            currentWebCam = new WebCamTexture(WebCamTexture.devices[0].name, 800, 800, 60);
+            //rawImage.texture = currentWebCam;
             open = true;
             currentWebCam.Play();
             //前置后置摄像头需要旋转一定角度,否则画面是不正确的,必须置于Play()函数后
@@ -119,19 +125,25 @@ public class ClickListener : MonoBehaviour
     // 拍照按钮监听
     public void TakePhoto()
     {
-        if (count % 3 == 0)
+        if (count % 2 == 0)
         {
 
             StartCoroutine(Call());
             count++;
+            tipText.text = "再次点击“拍照”按钮以拍摄";
         }
-        else if (count % 3 == 1)
+        else if (count % 2 == 1)
         {
 
             StartCoroutine(GetTexture());
             count++;
             photoed = true;
+            //tipText.text = "这里要改，试试拍完立马停止";
+            tipText.text = "点击透视变换并选取四个顶点。";
+
+
         }
+        /*
         else
         {
             currentWebCam.Stop();
@@ -142,6 +154,7 @@ public class ClickListener : MonoBehaviour
             count++;
             open = false;
         }
+        */
     }
 
     //透视变换
@@ -149,109 +162,30 @@ public class ClickListener : MonoBehaviour
     {
         if(photoed)
         {
-            try
+            if(!startSelectFourPoints)//没开始则开始
             {
-                /*
-                Debug.Log("start");
-                Mat img = Imgcodecs.imread(Application.persistentDataPath + "/photo.jpg");
-                Mat result = new Mat(borderRawImage, borderRawImage, CvType.CV_8UC1);
-                Debug.Log("1");
-                Point[] srcPoints = new Point[] {
-                    new Point(50, 730),
-                    new Point(750, 760),
-                    new Point(770, 30),
-                    new Point(10, 10),
-                };
-                Point[] dstPoints = new Point[] {
-                    new Point(30, 770),
-                    new Point(770, 770),
-                    new Point(770, 30),
-                    new Point(30, 30),
-                };
-                Debug.Log("2");
-                Mat pointsMat = Imgproc.getAffineTransform(new MatOfPoint2f(srcPoints), new MatOfPoint2f(dstPoints));//卡主!!!!!!!!!!!!!!!!!!!!!!!!
-                Debug.Log("3");
-                Mat transformMat = Imgproc.getPerspectiveTransform(new Mat(), new Mat());
-                Imgproc.warpPerspective(img, result, pointsMat, result.size());
-                Debug.Log("4");
-                Imgcodecs.imwrite(Application.persistentDataPath + "/transformed.jpg", result);
-                Debug.Log("end");
-                */
-                /*
-                //Mat img = new Mat(Application.persistentDataPath + "/photo.jpg");
-                textTest.text = "start";
-                Thread.Sleep(500);
-                textTest.text = "after sleep";
-                Mat img = Cv2.ImRead(Application.persistentDataPath + "/photo.jpg", ImreadModes.Unchanged);
-                Mat result = new Mat(400, 400,MatType.CV_8UC1);
-                var srcPoints = new Point2f[] {
-                new Point2f(50, 330),
-                new Point2f(350, 360),
-                new Point2f(370, 30),
-                new Point2f(10, 10),
-                };
-                //变换后的四点
-                var dstPoints = new Point2f[] {
-                new Point2f(30, 370),
-                new Point2f(370, 370),
-                new Point2f(370, 30),
-                new Point2f(30, 30),
-                };
-                textTest.text = "point 2f";
-                Thread.Sleep(500);
-                //根据变换前后四个点坐标,获取变换矩阵
-                Mat mm = Cv2.GetPerspectiveTransform(srcPoints, dstPoints);
-                //进行透视变换
-                //Cv2.WarpPerspective(ImageIn, ImageOut, mm, GrayImage.Size());
-                Cv2.WarpPerspective(img, result, mm, result.Size());
-                //result.ImWrite(Application.persistentDataPath + "transform_photo.jpg");
-                //result.WriteToStream(new FileStream(Application.persistentDataPath + "/transform_photo.jpg", FileMode.Create));
-                textTest.text = "end-1";
-                Thread.Sleep(500);
-                Cv2.ImWrite(Application.persistentDataPath + "/transform.jpg", result);
-                textTest.text = "end";
-                File.WriteAllBytes(Application.persistentDataPath+"/transformm.jpg",result.ToBytes());
-                */
-
-                /*
+                //加载原图
+                rawImage.color = new Color(255, 255, 255, 255);//重置透明度为不透明
                 Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
                 inputTexture.LoadImage(imgBytes);
-                Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
-                Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
-                Utils.texture2DToMat(inputTexture, inputMat);
-                */
-                //原代码-自动识别
-
-                //Texture2D inputTexture = Resources.Load("inputTexture") as Texture2D;
-                //Mat inputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
-                //Mat outputMat = new Mat(inputTexture.height, inputTexture.width, CvType.CV_8UC4);
-                //Utils.texture2DToMat(inputTexture, inputMat);
-                /*
-                Imgproc.cvtColor(inputMat, outputMat, Imgproc.COLOR_RGB2GRAY);
-
-                Imgproc.Canny(outputMat, outputMat, 100, 150);
-
-                Mat lines = new Mat();
-                //第五个参数是阈值，通过调整阈值大小可以过滤掉一些干扰线
-                //Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 180, 60, 50, 10);
-                Imgproc.HoughLinesP(outputMat, lines, 1, Mathf.PI / 120, 100, 100, 30);
-                //计算霍夫曼线外围的交叉点
-                int[] linesArray = new int[lines.cols() * lines.rows() * lines.channels()];
-                lines.get(0, 0, linesArray);
-                Debug.Log("length of lineArray " + linesArray.Length);
-                List<int> a = new List<int>();
-                List<int> b = new List<int>();
-                for (int i = 0; i < linesArray.Length - 4; i = i + 4)
+                rawImage.texture = inputTexture;
+                //重置
+                for (int i = 0; i < 4; i++)
                 {
-                    Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0), 5);//绿色
+                    whitchSelected[i] = false;
                 }
 
+                startSelectFourPoints = true;
+                tipText.text = "请手动点击选择四个顶点位置";
+                selectPanel.SetActive(true);
+            }
+            else if(whitchSelected[0] && whitchSelected[1] && whitchSelected[2] && whitchSelected[3])//开始了且都点了
+            {
+                ContinueTransform();
+            }
+            
 
-                Texture2D testTexture = new Texture2D(inputMat.cols(), inputMat.rows(), TextureFormat.RGBA32, false);
-                Utils.matToTexture2D(inputMat, testTexture);
-                testRaw.texture = testTexture;//显示到rawImage上。
-
-
+                /*
                 for (int i = 0; i < linesArray.Length; i = i + 4)
                 {
                     a.Add(linesArray[i + 0]);
@@ -282,14 +216,6 @@ public class ClickListener : MonoBehaviour
                 }
                 print("continue");
                 Vector2 center = Vector2.zero;
-                
-                                //for (int i = 0; i < corners.Count; i++)
-                                //{
-                                //    center += corners[i];
-                                //}
-                                //center *= 0.25f;
-                                //SortCorners(ref corners, center);
-                
 
                 for (int i = 0; i < 4; i++)
                 {
@@ -305,84 +231,18 @@ public class ClickListener : MonoBehaviour
                 Vector2 bl = corners[3];
                 */
 
-                /*
-                //以上部分是自动识别四个点的代码，但是好像有一点问题。
-                //测试像素点--真正用手动/自动还要改代码，这些数值是因为目前图片大小设置的是800。tl=top_left点,br=bottom_right点。
-                Vector2 tl = new Vector2(200,600);
-                Vector2 tr = new Vector2(500,700);
-                Vector2 br = new Vector2(700,200);
-                Vector2 bl = new Vector2(100,50);
-                */
-
-                updatePosition = 0;
-                //Thread thread = new Thread(waitForSelect);
-                //thread.Start(inputMat);
-                //StartCoroutine(waitForSelect(inputMat));
-                /*
-                Vector2 tl = Input.mousePosition;
-                Vector2 tr = Input.mousePosition;
-                Vector2 br = Input.mousePosition;
-                Vector2 bl = Input.mousePosition;
-                */
-                /*
-                Vector2 tl = Input.GetTouch(0).position;
-                Vector2 tr = Input.GetTouch(0).position;
-                Vector2 br = Input.GetTouch(0).position;
-                Vector2 bl = Input.GetTouch(0).position;
-                */
-                /*
-                print(tl.x + "  " + tl.y);
-                print(tr.x + "  " + tr.y);
-                print(br.x + "  " + br.y);
-                print(bl.x + "  " + bl.y);
-                //Vector2 tl = new Vector2(200, 600);
-                //Vector2 tr = new Vector2(500, 700);
-                //Vector2 br = new Vector2(700, 200);
-                //Vector2 bl = new Vector2(100, 50);
-
-                Mat srcRectMat = new Mat(4, 1, CvType.CV_32FC2);
-                Mat dstRectMat = new Mat(4, 1, CvType.CV_32FC2);
-
-                srcRectMat.put(0, 0, tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y);
-                //dstRectMat.put(0, 0, 0.0, inputMat.rows(), inputMat.cols(), inputMat.rows(), inputMat.rows(), 0, 0.0, 0.0);
-                dstRectMat.put(0, 0, 100, 700, 700, 700, 700, 100, 100, 100);
-
-                Mat perspectiveTransform = Imgproc.getPerspectiveTransform(srcRectMat, dstRectMat);
-                Mat outputMat0 = inputMat.clone();
-                /*
-                //圈出四个顶点
-                Point t = new Point(tl.x, tl.y);
-                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-                t = new Point(tr.x, tr.y);
-                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-                t = new Point(bl.x, bl.y);
-                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-                t = new Point(br.x, br.y);
-                Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-
-                print("circled");
-                */
-                //进行透视转换
-                /*
-                Imgproc.warpPerspective(inputMat, outputMat0, perspectiveTransform, new Size(inputMat.rows(), inputMat.cols()));
-
-                Texture2D outputTexture = new Texture2D(outputMat0.cols(), outputMat0.rows(), TextureFormat.RGBA32, false);
-                Utils.matToTexture2D(outputMat0, outputTexture);
-
-                rawImage.texture = outputTexture;//显示到rawImage上。
-                                                 //rawImage.material.mainTexture = outputTexture;
-                                                 //transformTexture = outputTexture;
-                                                 //transformed = true;
-                                                 //gameObject.GetComponent<Renderer>().material.mainTexture = outputTexture;
-                transformedImgBytes = outputTexture.EncodeToJPG();
-                File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", transformedImgBytes);
-                fourSelected = false;
-                */
-            }
-            catch (Exception e)
-            {
-
-            }
+            /*
+            //圈出四个顶点
+            Point t = new Point(tl.x, tl.y);
+            Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+            t = new Point(tr.x, tr.y);
+            Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+            t = new Point(bl.x, bl.y);
+            Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+            t = new Point(br.x, br.y);
+            Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
+            */
+            //进行透视转换
         }
     }
 
@@ -408,29 +268,19 @@ public class ClickListener : MonoBehaviour
         
         for (int i = 0; i < linesArray.Length - 4; i = i + 4)
         {
-            Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0, 255), 5);//绿色
+            Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0, 255), 10);//绿色
         }
-        /*
-        //为了检测是不是没点准的问题，画一下自己点的位置。
-        Imgproc.circle(inputMat, new Point(tl.x, 800-tl.y), 5, new Scalar(255, 0, 0));
-        Imgproc.circle(inputMat, new Point(tr.x, 800-tr.y), 5, new Scalar(255, 0, 0));
-        Imgproc.circle(inputMat, new Point(br.x, 800-br.y), 5, new Scalar(255, 0, 0));
-        Imgproc.circle(inputMat, new Point(bl.x, 800-bl.y), 5, new Scalar(255, 0, 0));
-        */
+
+        Imgproc.circle(inputMat, new Point(tl.x, 800 - tl.y), 5, new Scalar(255, 0, 0));
+        Imgproc.circle(inputMat, new Point(tr.x, 800 - tr.y), 5, new Scalar(255, 0, 0));
+        Imgproc.circle(inputMat, new Point(br.x, 800 - br.y), 5, new Scalar(255, 0, 0));
+        Imgproc.circle(inputMat, new Point(bl.x, 800 - bl.y), 5, new Scalar(255, 0, 0));
+
         Texture2D testT = new Texture2D(borderRawImage, borderRawImage, TextureFormat.RGBA32, false);
         Utils.matToTexture2D(inputMat, testT);
         byte[] testImg = testT.EncodeToJPG();
         File.WriteAllBytes(Application.persistentDataPath + "/selectCircle.jpg", testImg);
 
-        print(tl.x + "  " + tl.y);
-        print(tr.x + "  " + tr.y);
-        print(br.x + "  " + br.y);
-        print(bl.x + "  " + bl.y);
-
-        //Vector2 tl = new Vector2(200, 600);
-        //Vector2 tr = new Vector2(500, 700);
-        //Vector2 br = new Vector2(700, 200);
-        //Vector2 bl = new Vector2(100, 50);
 
         Mat srcRectMat = new Mat(4, 1, CvType.CV_32FC2);
         Mat dstRectMat = new Mat(4, 1, CvType.CV_32FC2);
@@ -442,45 +292,42 @@ public class ClickListener : MonoBehaviour
 
         Mat perspectiveTransform = Imgproc.getPerspectiveTransform(srcRectMat, dstRectMat);
         Mat outputMat0 = inputMat.clone();
-        /*
-        //圈出四个顶点
-        Point t = new Point(tl.x, tl.y);
-        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-        t = new Point(tr.x, tr.y);
-        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-        t = new Point(bl.x, bl.y);
-        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-        t = new Point(br.x, br.y);
-        Imgproc.circle(outputMat0, t, 10, new Scalar(0, 0, 255, 255), 2);
-
-        print("circled");
-        */
+        
         //进行透视转换
         Imgproc.warpPerspective(inputMat, outputMat0, perspectiveTransform, new Size(inputMat.rows(), inputMat.cols()));
 
         Texture2D outputTexture = new Texture2D(outputMat0.cols(), outputMat0.rows(), TextureFormat.RGBA32, false);
         Utils.matToTexture2D(outputMat0, outputTexture);
 
-        rawImage.texture = outputTexture;//显示到rawImage上。
-                                         //rawImage.material.mainTexture = outputTexture;
-                                         //transformTexture = outputTexture;
-                                         //transformed = true;
-                                         //gameObject.GetComponent<Renderer>().material.mainTexture = outputTexture;
+        rawImage.texture = outputTexture;
         transformedImgBytes = outputTexture.EncodeToJPG();
         File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", transformedImgBytes);
-        fourSelected = false;
-        print("end of Continue()");
+        
+        for (int i = 0; i < 4; i++)
+        {
+            fourSelectButtons[i].gameObject.SetActive(false);
+        }
+        selectPanel.SetActive(false);
+        startSelectFourPoints = false;
     }
 
     public IEnumerator GetTexture()
     {
         yield return new WaitForEndOfFrame();
-        Texture2D texture2D = new Texture2D(borderRawImage, borderRawImage);
+        Texture2D texture2D = new Texture2D(borderRawImage, borderRawImage);        
+        //截屏方式
         texture2D.ReadPixels(new UnityEngine.Rect(300, 140, borderRawImage, borderRawImage), 0, 0, false);
         texture2D.Apply();
         imgBytes = texture2D.EncodeToJPG();
         File.WriteAllBytes(Application.persistentDataPath + "/photo.jpg", imgBytes);
-        currentWebCam.Play();
+        //currentWebCam.Play();
+
+        currentWebCam.Stop();
+        rawImage.color = new Color(255, 255, 255, 255);//重置透明度为不透明
+        Texture2D inputTexture = new Texture2D(borderRawImage, borderRawImage);
+        inputTexture.LoadImage(imgBytes);
+        rawImage.texture = inputTexture;
+        open = false;
     }
 
     public void AutoSelect()
@@ -519,11 +366,11 @@ public class ClickListener : MonoBehaviour
             }
         }
         wallPanel.SetActive(true);
+        selecting = true;
     }
 
-    public void SelectWall()
+    public void SelectBoxSwitch()
     {
-        print("点击了手选");
         selecting = !selecting;
         if(selecting)
         {
@@ -555,36 +402,52 @@ public class ClickListener : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
-        if(updatePosition == 0 && Input.GetMouseButtonDown(0))
+        //我的上一个点过，我没点过，开始选择点，点击的是图片而不是取消点
+        if (Input.GetMouseButtonDown(0) && !whitchSelected[0] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             tl.x = Input.mousePosition.x - 300;
             tl.y = Input.mousePosition.y - 140;
-            updatePosition++;
-            print(tl.x + "  " + tl.y);
+            print(tl.x + "   " + tl.y);
+
+            fourSelectButtons[0].gameObject.SetActive(true);
+            //pointsForSelect[0].GetComponent<RectTransform>().position = new Vector3(tl.x, tl.y, 0);
+            fourSelectButtons[0].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, tl.y-30, 60);
+            fourSelectButtons[0].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, tl.x-30, 60);
+            whitchSelected[0] = true;
+            print("点了第一个点");
         }
-        else if(updatePosition == 1 && Input.GetMouseButtonDown(0))
+        else if(Input.GetMouseButtonDown(0) && whitchSelected[0] && !whitchSelected[1] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             tr.x = Input.mousePosition.x - 300;
             tr.y = Input.mousePosition.y - 140;
-            updatePosition++;
-            print(tr.x + "  " + tr.y);
+
+            fourSelectButtons[1].gameObject.SetActive(true);
+            fourSelectButtons[1].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, tr.y-30, 60);
+            fourSelectButtons[1].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, tr.x-30, 60);
+            whitchSelected[1] = true;
+            print("点了第2个点");
         }
-        else if(updatePosition == 2 && Input.GetMouseButtonDown(0))
+        else if(Input.GetMouseButtonDown(0) && whitchSelected[1] && !whitchSelected[2] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             br.x = Input.mousePosition.x - 300;
             br.y = Input.mousePosition.y - 140;
-            updatePosition++;
-            print(br.x + "  " + br.y);
+
+            fourSelectButtons[2].gameObject.SetActive(true);
+            fourSelectButtons[2].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, br.y-30, 60);
+            fourSelectButtons[2].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, br.x-30, 60);
+            whitchSelected[2] = true;
+            print("点了第3个点");
         }
-        else if(updatePosition == 3 && Input.GetMouseButtonDown(0))
+        else if(Input.GetMouseButtonDown(0) && whitchSelected[2] && !whitchSelected[3] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             bl.x = Input.mousePosition.x - 300;
             bl.y = Input.mousePosition.y - 140;
-            updatePosition = 4;
-            fourSelected = true;
-            ContinueTransform();
-            print(bl.x + "  " + bl.y);
+
+            fourSelectButtons[3].gameObject.SetActive(true);
+            fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, bl.y-30, 60);
+            fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, bl.x-30, 60);
+            whitchSelected[3] = true;
+            print("点了第4个点");
         }
     }
 
@@ -601,7 +464,30 @@ public class ClickListener : MonoBehaviour
     }
 
 
-
+    public void Deselect()
+    {
+        print("点击了选择点:"+ UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name);
+        if(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("tlPoint"))
+        {
+            fourSelectButtons[0].gameObject.SetActive(false);
+            whitchSelected[0] = false;
+        }
+        else if(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("trPoint"))
+        {
+            fourSelectButtons[1].gameObject.SetActive(false);
+            whitchSelected[1] = false;
+        }
+        else if(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("brPoint"))
+        {
+            fourSelectButtons[2].gameObject.SetActive(false);
+            whitchSelected[2] = false;
+        }
+        else//UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("blPoint")
+        {
+            fourSelectButtons[3].gameObject.SetActive(false);
+            whitchSelected[3] = false;
+        }
+    }
 
 
 
@@ -720,11 +606,9 @@ public class ClickListener : MonoBehaviour
 
     public void WallButtonClick()
     {
-        print("点击了按钮");
         //获得按钮
         GameObject theButton = UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject;
         int index = Convert.ToInt32(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Substring(0));
-        print("stateColor"+wallsState[index]+"  "+wallButtons[index].colors.normalColor.r);
 
         //更新状态信息
         if (wallsState[index] == 1)
