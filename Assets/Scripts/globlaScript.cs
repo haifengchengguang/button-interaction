@@ -26,19 +26,24 @@ public class globlaScript : MonoBehaviour
     public GameObject[] wallGameObjects = new GameObject[24];
     public GameObject[] edgeGameObjects = new GameObject[16];
     public GameObject[] coinGameObjects = new GameObject[5];
-
-
-    public Text tipText;
+    public Text warnText;
+    public Text info1;
+    public Text info2;
+    public AudioSource coinSound;
     
 
     //public Camera camera;
     Socket socket;
     bool isVrPlayer;
-
     byte[] buffer = new byte[1024];
-    //int i = 0;
 
+    //头
     float x = -1, y = 1.6f, z = 2.5f;
+    //手
+    float handx = -1, handy = 1.6f, handz = 2.5f;
+    bool isHandClose = true;
+    Vector3[] coinPositions = new Vector3[5];
+    int leftCount = 2, getCount = 0;
 
     private void Awake()
     {
@@ -74,13 +79,15 @@ public class globlaScript : MonoBehaviour
                 else if (instruction.Equals("./hand"))//收手势信息--可以改碰撞模式
                 {
                     int lx = me.Receive(buffer);
-                    double handx = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
+                    handx = (float) Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
                     int ly = me.Receive(buffer);
-                    double handy = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
+                    handy = (float) Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
                     int lz = me.Receive(buffer);
-                    double handz = Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
-                    
+                    handz = (float) Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
+
+                    isHandClose = true;
                     //判断放在update
+                    print("收到了手");
                 }
             }
         } catch (Exception e)
@@ -106,43 +113,29 @@ public class globlaScript : MonoBehaviour
         XRSettings.enabled = true;
         try
         {
-            //ClickListener._instance.tipText.text = "1";
-            tipText.text = "1";
             IPAddress ip = IPAddress.Parse("127.0.0.1");
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             //socket.Connect(new IPEndPoint(ip, 18189)); //配置服务器IP与端口
-            //ClickListener._instance.tipText.text = "2";
-            tipText.text = "2";
             socket.Connect(new IPEndPoint(ip, 8885));
-            //ClickListener._instance.tipText.text = "3";
-            tipText.text = "3";
             Thread myThread = new Thread(ListenMessage);
             myThread.Start(socket);
-            //ClickListener._instance.tipText.text = "4";
-            tipText.text = "4";
-
 
             socket.Send(Encoding.ASCII.GetBytes(ClickListener.isVRPlayer.ToString()));
-            Thread.Sleep(50);
+            Thread.Sleep(20);
             socket.Send(Encoding.ASCII.GetBytes(ClickListener.sureLoadMap.ToString()));
             Thread.Sleep(20);
         }
         catch (Exception e)
         {
-            //ClickListener._instance.tipText.text = "catch";
-            tipText.text = "catch";
             Debug.Log(e.Message);
-            //ClickListener._instance.tipText.text = e.Message;
-            tipText.text = e.Message;
+            warnText.text = e.Message;
         }
 
-        print("ClickListener.sureLoadMap:"+ClickListener.sureLoadMap);
         if (ClickListener.sureLoadMap)
         {
             wallCount = 0;
             for (int i = 0; i < 24; i++)
             {
-                print("ClickListener.wallsState[i]:" + ClickListener.wallsState[i]);
                 if (ClickListener.wallsState[i] == 1)
                 {
                     tempWalls[wallCount] = i;
@@ -171,6 +164,7 @@ public class globlaScript : MonoBehaviour
             {
 
             }
+
         }
         else
         {
@@ -198,29 +192,31 @@ public class globlaScript : MonoBehaviour
         }
 
         //更新墙体
-        print("wallCount:" + wallCount);
         int tempIndex = 0;
         for ( int i = 0; i < 24; i++)
         {
-            print("i:" + i);
             if(i == tempWalls[tempIndex] && tempIndex < wallCount)
             {
-                print("wall" + i + "setActive(true)");
                 wallGameObjects[i].SetActive(true);
                 tempIndex++;
             }
             else
             {
-                print("wall" + i + "false");
                 wallGameObjects[i].SetActive(false);
             }
         }
-
-
-        //test
-        print(ClickListener.isVRPlayer);
-        //ClickListener._instance.tipText.text = "end Awake";
-        tipText.text = "end Awake";
+        /*
+        //随机生成两个金币位置-----------------------------------------------------------------------------------------------有bug，查随机数API---
+        coinPositions[0] = new Vector3(new System.Random().Next(-1,2)*2-1, 3, new System.Random().Next(1,4)*2+0.5f);
+        coinPositions[1] = new Vector3(new System.Random().Next(-1,2)*2-1, 3, new System.Random().Next(1,4)*2+0.5f);
+        coinGameObjects[0].transform.position = coinPositions[0];
+        coinGameObjects[1].transform.position = coinPositions[1];
+        */
+        //因为有bug所以设了几个测试值
+        coinPositions[0] = new Vector3(-1, 2, 2.5f);
+        coinPositions[1] = new Vector3(-1, 2, 2.5f);
+        coinGameObjects[0].transform.position = new Vector3(-1, 2, 2.5f);
+        coinGameObjects[1].transform.position = new Vector3(-1, 2, 2.5f);
     }
 
     // Update is called once per frame
@@ -230,14 +226,51 @@ public class globlaScript : MonoBehaviour
         //transform.Translate(Vector3.forward*(i%5), Space.World);//Slef和World都是一直在反复运动
         //transform.Translate(new Vector3(x*-1.62f*z, y*1.62f*z, z), Space.World);//1.62太大了，现实中移动了1m，游戏中移动了3m+，不太合理，但是要求是重定向，在游戏内可以走很远。映射到unity里6*6如何，8*8？
         //Debug.Log("./location x=" + x + "             y=" + y + "            z=" + z);
-        if(z == 2.5f)
+        if(z == 2.5f)//没有连接kinect时不移动
         {
 
         }
-        else
+        else//收到kinect数据导致z！=2.5，按收的数据产生平移---需要设置各参数 比如如下的1.2、3.3等（12.18日晚测试3.3太大，其实是因为忘记考虑1.5的问题了）
         {
-            transform.position = new Vector3(x * -1.2f * z, y * 1.2f * z, z);//1.62时 225cm对应游戏内8m边界，此时z有1.5，z应等于2.5。所以1.62不止225对应240大，对应于1.5与2.5也偏大。
+            transform.position = new Vector3(x * -1.2f * z, y * 1.2f * z, (z - 1.5f) * 3.3f + 1.5f);//1.62时 225cm对应游戏内8m边界，此时z有1.5，z应等于2.5。所以1.62不止225对应240大，对应于1.5与2.5也偏大。
         }
         //每隔deltaTime长时间更新坐标
+
+
+        //判断手
+        if(isHandClose)
+        {
+            //映射手的坐标
+            /*
+            handx = handx * -1.2f * handz;
+            handy = handy * 1.2f * handz;
+            */
+            handx = -1;
+            handy = 2;
+            handz = 2.5f;
+            //print("hand   " +handx+"  "+handy+"  "+handz);
+
+
+            //判断位置   < 1就判断为捡到了可能太容易了
+            for(int i = 0; i < 5; i++)
+            {
+                if (/*coinGameObjects[i].isActive*/coinPositions[i].y!= -2 && Math.Abs(coinPositions[i].x - handx) < 1 && Math.Abs(coinPositions[i].y - handy) < 1 && Math.Abs(coinPositions[i].z - handz) < 1)//如果y不是-2
+                {
+                    //消除金币，y坐标置为-2
+                    coinGameObjects[i].transform.position = new Vector3(0, -2, 0);
+                    coinPositions[i].y = -2;
+                    //coinGameObjects[i].SetActive(false);
+                    //播放声音
+                    coinSound.Play();
+                    //更新画布--金币数值，特定字符串加数字
+                    leftCount--;
+                    getCount++;
+                    info1.text = "场上剩余 " + leftCount;
+                    info2.text = "已拾取 " + getCount;
+                }
+            }
+            //关闭手
+            //isHandClose = false;
+        }
     }
 }
