@@ -63,8 +63,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assets\ClickListener.cs" />
-    <Compile Include="Assets\globlaScript.cs" />
     <Compile Include="Assets\GoogleVR\Beta\Demos\Scripts\DemoObjectController6DoF.cs" />
     <Compile Include="Assets\GoogleVR\Beta\Demos\Scripts\DemoSeeThroughController.cs" />
     <Compile Include="Assets\GoogleVR\Beta\Scripts\GvrBetaControllerInput.cs" />
@@ -535,6 +533,9 @@
     <Compile Include="Assets\OpenCVForUnity\org\opencv_contrib\xphoto\SimpleWB.cs" />
     <Compile Include="Assets\OpenCVForUnity\org\opencv_contrib\xphoto\WhiteBalancer.cs" />
     <Compile Include="Assets\OpenCVForUnity\org\opencv_contrib\xphoto\Xphoto.cs" />
+    <Compile Include="Assets\Scripts\ClickListener.cs" />
+    <Compile Include="Assets\Scripts\demotwo.cs" />
+    <Compile Include="Assets\Scripts\globlaScript.cs" />
     <None Include="Assets\StreamingAssets\haarcascade_frontalface_alt.xml" />
     <None Include="Assets\StreamingAssets\lbpcascade_frontalface.xml" />
     <None Include="Assets\GoogleVR\Shaders\GvrUIOverlayFont.shader" />
