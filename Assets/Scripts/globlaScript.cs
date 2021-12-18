@@ -43,6 +43,7 @@ public class globlaScript : MonoBehaviour
     float handx = -1, handy = 1.6f, handz = 2.5f;
     bool isHandClose = true;
     Vector3[] coinPositions = new Vector3[5];
+    private int receiveNum = 2;
     int leftCount = 2, getCount = 0;
 
     private void Awake()
@@ -88,6 +89,20 @@ public class globlaScript : MonoBehaviour
                     isHandClose = true;
                     //判断放在update
                     print("收到了手");
+                }
+                //接收金币
+                else if(instruction.Equals("./coin"))
+                {
+                    int lIndexOfCoin = me.Receive(buffer);
+                    int indexOfCoin=(int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lIndexOfCoin));
+                    int coinX = (indexOfCoin / 4 + 1)*2-5;
+                    float coinY = 10.5f-2*(indexOfCoin % 4 + 1);
+                    if (receiveNum < 5)
+                    {
+                        coinGameObjects[receiveNum].transform.position = new Vector3(coinX, 2, coinY);
+                        receiveNum++;
+                    }
+
                 }
             }
         } catch (Exception e)
@@ -271,6 +286,13 @@ public class globlaScript : MonoBehaviour
             }
             //关闭手
             //isHandClose = false;
+        }
+
+        if (getCount == 5&&Math.Abs(x-3)<1&&Math.Abs(z-8.5)<1)
+        {
+            //发送游戏结束
+            String success = "success";
+            socket.Send(Encoding.ASCII.GetBytes(success));
         }
     }
 }
