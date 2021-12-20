@@ -55,7 +55,36 @@ public class globlaScript : MonoBehaviour
     {
 
     }
-
+// Number随机数个数
+// minNum随机数下限
+// maxNum随机数上限
+    public int[] GetRandomArray(int Number,int minNum,int maxNum)
+    {
+        int j;
+        int[] b=new int[Number];
+        Random r=new Random();
+        for(j=0;j<Number;j++)
+        {
+            int i=r.Next(minNum,maxNum+1);
+            int num=0;
+            for(int k=0;k<j;k++)
+            {
+                if(b[k]==i)
+                {
+                    num=num+1;
+                }
+            }
+            if(num==0 )
+            {
+                b[j]=i;
+            }
+            else
+            {
+                j=j-1;
+            }
+        }
+        return b;
+    }
     private void ListenMessage(object socket)//======================================================收消息
     {
         Socket me = (Socket) socket;
@@ -146,6 +175,9 @@ public class globlaScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        // Random random1 = new Random(Guid.NewGuid().GetHashCode());
+        // for(int i=0;i<100;i++)
+        // {print("i="+i+" random1.Next(0,15))="+random1.Next(0,15));}
         XRSettings.enabled = true;
         try
         {
@@ -268,10 +300,10 @@ public class globlaScript : MonoBehaviour
         info1.text = "场上剩余 "+leftCount;
         print("coinArrayLength"+leftCount);
         Random random = new Random(Guid.NewGuid().GetHashCode());
-        int []coinArray=new int[leftCount];
+        int []coinArray = GetRandomArray(leftCount, 0, 15);
         for (int i = 0; i < leftCount; i++)
         {
-            coinArray[i] = random.Next(0, 15);
+            //coinArray[i] = random.Next(0, 15);
             Debug.Log("coinArray["+i+"]"+coinArray[i]);
             int coinX_i = (coinArray[i] % 4 + 1)*2-5;
             float coinZ_i = 10.5f - 2 * (coinArray[i] / 4 + 1);
