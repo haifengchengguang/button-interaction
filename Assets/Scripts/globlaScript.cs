@@ -48,9 +48,9 @@ public class globlaScript : MonoBehaviour
     private int receiveNum = 2;
     int leftCount = 2, getCount = 0;
     //高度
-    private float height;
+    private float height=ClickListener.playerHeight+0.2f;
     //玩家数量
-    private bool OnlyVR = true;
+    private bool OnlyVR = ClickListener.is2Player;
     private void Awake()
     {
 
@@ -110,13 +110,13 @@ public class globlaScript : MonoBehaviour
                     }
 
                 }
-                //接收高度
-                else if(instruction.Equals("./height"))
-                {
-                    int lheight = me.Receive(buffer);
-                    height=(float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lheight));
-
-                }
+                // //接收高度
+                // else if(instruction.Equals("./height"))
+                // {
+                //     int lheight = me.Receive(buffer);
+                //     height=(float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lheight));
+                //
+                // }
                 else if(instruction.Equals("./OnlyVR"))
                 {
                     int lOnlyVR = me.Receive(buffer);
@@ -146,7 +146,7 @@ public class globlaScript : MonoBehaviour
         XRSettings.enabled = true;
         try
         {
-            IPAddress ip = IPAddress.Parse("127.0.0.1");
+            IPAddress ip = IPAddress.Parse(ClickListener.serverIP);
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             //socket.Connect(new IPEndPoint(ip, 18189)); //配置服务器IP与端口
             socket.Connect(new IPEndPoint(ip, 8885));

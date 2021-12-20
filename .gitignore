@@ -4,8 +4,8 @@
 *.ap_
 *.aab
 /[Aa]ssets/OpenCVForUnity
-/[Ll]ibrary/
 /[Tt]emp/
+/[Aa]ssets/[Ss]treamingAssets/
 # Files for the ART/Dalvik VM
 *.dex
 

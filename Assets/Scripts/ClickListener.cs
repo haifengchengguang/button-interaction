@@ -47,6 +47,7 @@ public class ClickListener : MonoBehaviour
     public static bool sureLoadMap = false;
     public static bool is2Player = false;
     public static int kinectHeight;
+    public static int playerHeight;
     public static String serverIP;
 
     int count = 0;
@@ -65,6 +66,7 @@ public class ClickListener : MonoBehaviour
     public Button[] fourSelectButtons = new Button[4];
     public InputField kinectHeightInputField;
     public InputField serverIpInputField;
+    public InputField playerHeightInputField;
     public Text currentPlayerNumText;
     public Text currentPlayerIdentityText;
 
@@ -78,6 +80,7 @@ public class ClickListener : MonoBehaviour
 
     private void Awake()
     {
+        startInfoPanel.SetActive(false);
         XRSettings.enabled = false;
     }
     // Start is called before the first frame update
@@ -96,7 +99,7 @@ public class ClickListener : MonoBehaviour
         //默认设置墙体按钮隐藏
         wallPanel.SetActive(false);
         selectPanel.SetActive(false);
-        startInfoPanel.SetActive(false);
+      //  startInfoPanel.SetActive(false);
 
         //初始化提示文本
         //tipText.text = "请点击拍照按钮或直接开始游戏";
@@ -442,8 +445,10 @@ public class ClickListener : MonoBehaviour
     public void gameStart()
     {
         kinectHeightInputField = GameObject.Find("kinectHeightInputField").GetComponent<InputField>();
+        playerHeightInputField = GameObject.Find("playerHeightInputField").GetComponent<InputField>();
         serverIpInputField = GameObject.Find("serverIpInputField").GetComponent<InputField>();
         kinectHeight = Convert.ToInt32(kinectHeightInputField.text);
+        playerHeight = Convert.ToInt32(playerHeightInputField.text);
         serverIP = serverIpInputField.text;
         //传迷宫信息
         UnityEngine.SceneManagement.SceneManager.LoadScene("HelloVR");
