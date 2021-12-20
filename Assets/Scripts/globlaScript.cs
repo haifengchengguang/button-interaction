@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System;
 using System.Text;
 using UnityEngine.XR;
+using Random = System.Random;
 
 public class globlaScript : MonoBehaviour
 {
@@ -43,9 +44,13 @@ public class globlaScript : MonoBehaviour
     float handx = -1, handy = 1.6f, handz = 2.5f;
     bool isHandClose = true;
     Vector3[] coinPositions = new Vector3[5];
+    //接收金币个数 随机生成两个从2开始 2,3,4
     private int receiveNum = 2;
     int leftCount = 2, getCount = 0;
-
+    //高度
+    private float height;
+    //玩家数量
+    private bool OnlyVR = true;
     private void Awake()
     {
 
@@ -91,18 +96,31 @@ public class globlaScript : MonoBehaviour
                     print("收到了手");
                 }
                 //接收金币
-                else if(instruction.Equals("./coin"))
+                else if(instruction.Equals("./coin")&&OnlyVR==false)
                 {
                     int lIndexOfCoin = me.Receive(buffer);
                     int indexOfCoin=(int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lIndexOfCoin));
                     int coinX = (indexOfCoin / 4 + 1)*2-5;
-                    float coinY = 10.5f-2*(indexOfCoin % 4 + 1);
+                    float coinZ = 10.5f-2*(indexOfCoin % 4 + 1);
                     if (receiveNum < 5)
                     {
-                        coinGameObjects[receiveNum].transform.position = new Vector3(coinX, 2, coinY);
+                        coinPositions[receiveNum]=new Vector3(coinX, height, coinZ);
+                        coinGameObjects[receiveNum].transform.position = coinPositions[receiveNum];
                         receiveNum++;
                     }
 
+                }
+                //接收高度
+                else if(instruction.Equals("./height"))
+                {
+                    int lheight = me.Receive(buffer);
+                    height=(float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lheight));
+
+                }
+                else if(instruction.Equals("./OnlyVR"))
+                {
+                    int lOnlyVR = me.Receive(buffer);
+                    OnlyVR=Convert.ToBoolean(Encoding.ASCII.GetString(buffer, 0, lOnlyVR));
                 }
             }
         } catch (Exception e)
@@ -134,8 +152,11 @@ public class globlaScript : MonoBehaviour
             socket.Connect(new IPEndPoint(ip, 8885));
             Thread myThread = new Thread(ListenMessage);
             myThread.Start(socket);
-
+            socket.Send(Encoding.ASCII.GetBytes("./isVRPlayer"));
+            Thread.Sleep(20);
             socket.Send(Encoding.ASCII.GetBytes(ClickListener.isVRPlayer.ToString()));
+            Thread.Sleep(20);
+            socket.Send(Encoding.ASCII.GetBytes("./sureLoadMap"));
             Thread.Sleep(20);
             socket.Send(Encoding.ASCII.GetBytes(ClickListener.sureLoadMap.ToString()));
             Thread.Sleep(20);
@@ -161,17 +182,25 @@ public class globlaScript : MonoBehaviour
             {
                 //只发需要的墙体index
                 //发送总数量
+                socket.Send(Encoding.ASCII.GetBytes("./wallCount"));
+                Thread.Sleep(20);
                 socket.Send(Encoding.ASCII.GetBytes(wallCount.ToString()));
                 Thread.Sleep(50);
                 for (int i = 0; i < wallCount; i++)
                 {
+                    socket.Send(Encoding.ASCII.GetBytes("./tempWalls"));
+                    Thread.Sleep(20);
                     socket.Send(Encoding.ASCII.GetBytes(tempWalls[i].ToString()));
                     Thread.Sleep(50);
                 }
 
                 //入口index，出口index
+                socket.Send(Encoding.ASCII.GetBytes("./entranceIndex"));
+                Thread.Sleep(20);
                 socket.Send(Encoding.ASCII.GetBytes("1"));//入口
                 Thread.Sleep(50);
+                socket.Send(Encoding.ASCII.GetBytes("./exitIndex"));
+                Thread.Sleep(20);
                 socket.Send(Encoding.ASCII.GetBytes("7"));//出口
                 Thread.Sleep(50);
             }
@@ -220,6 +249,46 @@ public class globlaScript : MonoBehaviour
                 wallGameObjects[i].SetActive(false);
             }
         }
+        socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
+        Thread.Sleep(20);
+        socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
+        int coinArrayLength = 2;
+        if (OnlyVR)
+        {
+           coinArrayLength = 5;
+        }
+        Random random = new Random();
+        int []coinArray=new int[coinArrayLength];
+        for (int i = 0; i < coinArrayLength; i++)
+        {
+            coinArray[i] = random.Next(0, 15);
+            int coinX_i = (coinArray[i] / 4 + 1)*2-5;
+            float coinZ_i = 10.5f - 2 * (coinArray[i] % 4 + 1);
+            coinPositions[i] = new Vector3(coinX_i, height, coinZ_i);
+            coinGameObjects[i].transform.position = coinPositions[i];
+        }
+
+        if (OnlyVR==false)
+        {
+            socket.Send(Encoding.ASCII.GetBytes("./twoCoins"));
+            Thread.Sleep(20);
+            socket.Send(Encoding.ASCII.GetBytes(coinArray[0].ToString()));
+            Thread.Sleep(20);
+            socket.Send(Encoding.ASCII.GetBytes(coinArray[1].ToString()));
+
+        }
+        // int a = random.Next(0, 15);
+        // int b = random.Next(0, 15);
+        // Debug.Log("a="+a);
+        // Debug.Log("b="+b);
+        // int coinX_a = (a / 4 + 1)*2-5;
+        // float coinZ_a = 10.5f-2*(a % 4 + 1);
+        // int coinX_b = (b / 4 + 1) * 2 - 5;
+        // float coinZ_b = 10.5f - 2*(a % 4 + 1);
+        // coinPositions[0] = new Vector3(coinX_a, height, coinZ_a);
+        // coinPositions[1] = new Vector3(coinX_b, height, coinZ_b);
+        // coinGameObjects[0].transform.position = coinPositions[0];
+        // coinGameObjects[1].transform.position = coinPositions[1];
         /*
         //随机生成两个金币位置-----------------------------------------------------------------------------------------------有bug，查随机数API---
         coinPositions[0] = new Vector3(new System.Random().Next(-1,2)*2-1, 3, new System.Random().Next(1,4)*2+0.5f);
@@ -228,10 +297,10 @@ public class globlaScript : MonoBehaviour
         coinGameObjects[1].transform.position = coinPositions[1];
         */
         //因为有bug所以设了几个测试值
-        coinPositions[0] = new Vector3(-1, 2, 2.5f);
-        coinPositions[1] = new Vector3(-1, 2, 2.5f);
-        coinGameObjects[0].transform.position = new Vector3(-1, 2, 2.5f);
-        coinGameObjects[1].transform.position = new Vector3(-1, 2, 2.5f);
+        // coinPositions[0] = new Vector3(-1, 2, 2.5f);
+        // coinPositions[1] = new Vector3(-1, 2, 2.5f);
+        // coinGameObjects[0].transform.position = new Vector3(-1, 2, 2.5f);
+        // coinGameObjects[1].transform.position = new Vector3(-1, 2, 2.5f);
     }
 
     // Update is called once per frame
@@ -271,6 +340,10 @@ public class globlaScript : MonoBehaviour
             {
                 if (/*coinGameObjects[i].isActive*/coinPositions[i].y!= -2 && Math.Abs(coinPositions[i].x - handx) < 1 && Math.Abs(coinPositions[i].y - handy) < 1 && Math.Abs(coinPositions[i].z - handz) < 1)//如果y不是-2
                 {
+                    //发送i
+                    socket.Send(Encoding.ASCII.GetBytes("./getCoin"));
+                    Thread.Sleep(20);
+                    socket.Send(Encoding.ASCII.GetBytes(i.ToString()));
                     //消除金币，y坐标置为-2
                     coinGameObjects[i].transform.position = new Vector3(0, -2, 0);
                     coinPositions[i].y = -2;
@@ -292,6 +365,8 @@ public class globlaScript : MonoBehaviour
         {
             //发送游戏结束
             String success = "success";
+            socket.Send(Encoding.ASCII.GetBytes("./success"));
+            Thread.Sleep(20);
             socket.Send(Encoding.ASCII.GetBytes(success));
         }
     }
