@@ -45,11 +45,14 @@ public class ClickListener : MonoBehaviour
     //玩家开始信息
     public static bool isVRPlayer = true;
     public static bool sureLoadMap = false;
+    public static bool is2Player = false;
+    public static int kinectHeight;
+    public static String serverIP;
 
     int count = 0;
     bool photoed = false;
     bool open = false;
-    
+
 
 
     //场景对象
@@ -57,8 +60,13 @@ public class ClickListener : MonoBehaviour
     public Text tipText;
     public GameObject wallPanel;
     public GameObject selectPanel;
+    public GameObject startInfoPanel;
     public Button[] wallButtons = new Button[24];
     public Button[] fourSelectButtons = new Button[4];
+    public InputField kinectHeightInputField;
+    public InputField serverIpInputField;
+    public Text currentPlayerNumText;
+    public Text currentPlayerIdentityText;
 
     //屏幕信息
     int Swidth, Sheight;
@@ -88,6 +96,7 @@ public class ClickListener : MonoBehaviour
         //默认设置墙体按钮隐藏
         wallPanel.SetActive(false);
         selectPanel.SetActive(false);
+        startInfoPanel.SetActive(false);
 
         //初始化提示文本
         //tipText.text = "请点击拍照按钮或直接开始游戏";
@@ -124,9 +133,11 @@ public class ClickListener : MonoBehaviour
     // 开始游戏按钮监听
     public void StartGame()
     {
-        //身份判定！！！传给另一个场景代码
-        //传迷宫信息
-        UnityEngine.SceneManagement.SceneManager.LoadScene("HelloVR");
+        // 弹出用户信息页面
+        startInfoPanel.SetActive(true);
+
+
+
     }
 
     // 拍照按钮监听
@@ -167,9 +178,9 @@ public class ClickListener : MonoBehaviour
     //透视变换
     public void Transform()
     {
-        if(photoed)
+        if (photoed)
         {
-            if(!startSelectFourPoints)//没开始则开始
+            if (!startSelectFourPoints)//没开始则开始
             {
                 //加载原图
                 rawImage.color = new Color(255, 255, 255, 255);//重置透明度为不透明
@@ -186,57 +197,57 @@ public class ClickListener : MonoBehaviour
                 tipText.text = "请手动点击选择-1左上-2右上-3右下-4左下-的顶点位置";
                 selectPanel.SetActive(true);
             }
-            else if(whitchSelected[0] && whitchSelected[1] && whitchSelected[2] && whitchSelected[3])//开始了且都点了
+            else if (whitchSelected[0] && whitchSelected[1] && whitchSelected[2] && whitchSelected[3])//开始了且都点了
             {
                 ContinueTransform();
             }
-            
 
-                /*
-                for (int i = 0; i < linesArray.Length; i = i + 4)
+
+            /*
+            for (int i = 0; i < linesArray.Length; i = i + 4)
+            {
+                a.Add(linesArray[i + 0]);
+                a.Add(linesArray[i + 1]);
+                a.Add(linesArray[i + 2]);
+                a.Add(linesArray[i + 3]);
+                for (int j = i + 4; j < linesArray.Length; j = j + 4)
                 {
-                    a.Add(linesArray[i + 0]);
-                    a.Add(linesArray[i + 1]);
-                    a.Add(linesArray[i + 2]);
-                    a.Add(linesArray[i + 3]);
-                    for (int j = i + 4; j < linesArray.Length; j = j + 4)
+                    b.Add(linesArray[j + 0]);
+                    b.Add(linesArray[j + 1]);
+                    b.Add(linesArray[j + 2]);
+                    b.Add(linesArray[j + 3]);
+
+                    Vector2 temp = ComputeIntersect(a, b);//计算交点坐标
+                    b.Clear();
+
+                    if (temp.x > 0 && temp.y > 0 && temp.x < 1000 && temp.y < 1000)
                     {
-                        b.Add(linesArray[j + 0]);
-                        b.Add(linesArray[j + 1]);
-                        b.Add(linesArray[j + 2]);
-                        b.Add(linesArray[j + 3]);
-
-                        Vector2 temp = ComputeIntersect(a, b);//计算交点坐标
-                        b.Clear();
-
-                        if (temp.x > 0 && temp.y > 0 && temp.x < 1000 && temp.y < 1000)
-                        {
-                            corners.Add(temp);
-                        }
+                        corners.Add(temp);
                     }
-                    a.Clear();
                 }
-                CullIllegalPoint(ref corners, 20);//剔除重合的点和不合理的点
-                if (corners.Count != 4)
-                {
-                    Debug.Log("The object is not quadrilateral  " + corners.Count);
-                }
-                print("continue");
-                Vector2 center = Vector2.zero;
+                a.Clear();
+            }
+            CullIllegalPoint(ref corners, 20);//剔除重合的点和不合理的点
+            if (corners.Count != 4)
+            {
+                Debug.Log("The object is not quadrilateral  " + corners.Count);
+            }
+            print("continue");
+            Vector2 center = Vector2.zero;
 
-                for (int i = 0; i < 4; i++)
-                {
-                    center += corners[i];
-                }
-                center *= 0.25f;
-                SortCorners(ref corners, center);
-                
-                //计算转换矩阵
-                Vector2 tl = corners[0];
-                Vector2 tr = corners[1];
-                Vector2 br = corners[2];
-                Vector2 bl = corners[3];
-                */
+            for (int i = 0; i < 4; i++)
+            {
+                center += corners[i];
+            }
+            center *= 0.25f;
+            SortCorners(ref corners, center);
+
+            //计算转换矩阵
+            Vector2 tl = corners[0];
+            Vector2 tr = corners[1];
+            Vector2 br = corners[2];
+            Vector2 bl = corners[3];
+            */
 
             /*
             //圈出四个顶点
@@ -272,7 +283,7 @@ public class ClickListener : MonoBehaviour
         //计算霍夫曼线外围的交叉点
         int[] linesArray = new int[lines.cols() * lines.rows() * lines.channels()];
         lines.get(0, 0, linesArray);
-        
+
         for (int i = 0; i < linesArray.Length - 4; i = i + 4)
         {
             Imgproc.line(inputMat, new Point(linesArray[i + 0], linesArray[i + 1]), new Point(linesArray[i + 2], linesArray[i + 3]), new Scalar(0, 255, 0, 255), 10);//绿色
@@ -299,7 +310,7 @@ public class ClickListener : MonoBehaviour
 
         Mat perspectiveTransform = Imgproc.getPerspectiveTransform(srcRectMat, dstRectMat);
         Mat outputMat0 = inputMat.clone();
-        
+
         //进行透视转换
         Imgproc.warpPerspective(inputMat, outputMat0, perspectiveTransform, new Size(inputMat.rows(), inputMat.cols()));
 
@@ -309,7 +320,7 @@ public class ClickListener : MonoBehaviour
         rawImage.texture = outputTexture;
         transformedImgBytes = outputTexture.EncodeToJPG();
         File.WriteAllBytes(Application.persistentDataPath + "/transformed.jpg", transformedImgBytes);
-        
+
         for (int i = 0; i < 4; i++)
         {
             fourSelectButtons[i].gameObject.SetActive(false);
@@ -321,7 +332,7 @@ public class ClickListener : MonoBehaviour
     public IEnumerator GetTexture()
     {
         yield return new WaitForEndOfFrame();
-        Texture2D texture2D = new Texture2D(borderRawImage, borderRawImage);        
+        Texture2D texture2D = new Texture2D(borderRawImage, borderRawImage);
         //截屏方式
         texture2D.ReadPixels(new UnityEngine.Rect(300, 140, borderRawImage, borderRawImage), 0, 0, false);
         texture2D.Apply();
@@ -347,9 +358,9 @@ public class ClickListener : MonoBehaviour
             wallsState[i] = 0;
             wallButtons[i].colors = defaultColor;
         }
-        for( int i = 0; i < 24; i++)
+        for (int i = 0; i < 24; i++)
         {
-            if(i <= 11)//row
+            if (i <= 11)//row
             {
                 int x = 175 + 150 * (i % 4);
                 int y = 250 + 150 * (i / 4);
@@ -362,8 +373,8 @@ public class ClickListener : MonoBehaviour
             }
             else//column
             {
-                int x = 250 + 150 * ((i-12) % 3);
-                int y = 175 + 150 * ((i-12) / 3);
+                int x = 250 + 150 * ((i - 12) % 3);
+                int y = 175 + 150 * ((i - 12) / 3);
                 Color thisPointColor = img.GetPixel(x, y);
                 if (thisPointColor.r * 255 <= 40 && thisPointColor.g * 255 >= 235 && thisPointColor.b * 255 <= 40)
                 {
@@ -379,7 +390,7 @@ public class ClickListener : MonoBehaviour
     public void SelectBoxSwitch()
     {
         selecting = !selecting;
-        if(selecting)
+        if (selecting)
         {
             wallPanel.SetActive(true);
         }
@@ -392,7 +403,7 @@ public class ClickListener : MonoBehaviour
 
     public void Reset()
     {
-        for(int i = 0; i < 24; i++)
+        for (int i = 0; i < 24; i++)
         {
             wallButtons[i].colors = defaultColor;
             wallsState[i] = 0;
@@ -402,6 +413,45 @@ public class ClickListener : MonoBehaviour
     public void Upload()
     {
         sureLoadMap = true;
+    }
+
+    public void onePlayer()
+    {
+        is2Player = false;
+        currentPlayerNumText.text = "一人";
+    }
+
+    public void twoPlayer()
+    {
+        is2Player = true;
+        currentPlayerNumText.text = "两人";
+    }
+
+    public void VRIdentity()
+    {
+        isVRPlayer = true;
+        currentPlayerIdentityText.text = "VR";
+    }
+
+    public void observerIdentity()
+    {
+        isVRPlayer = false;
+        currentPlayerIdentityText.text = "观察者";
+    }
+
+    public void gameStart()
+    {
+        kinectHeightInputField = GameObject.Find("kinectHeightInputField").GetComponent<InputField>();
+        serverIpInputField = GameObject.Find("serverIpInputField").GetComponent<InputField>();
+        kinectHeight = Convert.ToInt32(kinectHeightInputField.text);
+        serverIP = serverIpInputField.text;
+        //传迷宫信息
+        UnityEngine.SceneManagement.SceneManager.LoadScene("HelloVR");
+    }
+
+    public void returnToStartPage()
+    {
+        startInfoPanel.SetActive(false);
     }
 
 
@@ -422,41 +472,41 @@ public class ClickListener : MonoBehaviour
 
             fourSelectButtons[0].gameObject.SetActive(true);
             //pointsForSelect[0].GetComponent<RectTransform>().position = new Vector3(tl.x, tl.y, 0);
-            fourSelectButtons[0].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, tl.y-30, 60);
-            fourSelectButtons[0].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, tl.x-30, 60);
+            fourSelectButtons[0].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, tl.y - 30, 60);
+            fourSelectButtons[0].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, tl.x - 30, 60);
             whitchSelected[0] = true;
             print("点了第一个点");
         }
-        else if(Input.GetMouseButtonDown(0) && whitchSelected[0] && !whitchSelected[1] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
+        else if (Input.GetMouseButtonDown(0) && whitchSelected[0] && !whitchSelected[1] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             tr.x = Input.mousePosition.x - 300;
             tr.y = Input.mousePosition.y - 140;
 
             fourSelectButtons[1].gameObject.SetActive(true);
-            fourSelectButtons[1].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, tr.y-30, 60);
-            fourSelectButtons[1].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, tr.x-30, 60);
+            fourSelectButtons[1].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, tr.y - 30, 60);
+            fourSelectButtons[1].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, tr.x - 30, 60);
             whitchSelected[1] = true;
             print("点了第2个点");
         }
-        else if(Input.GetMouseButtonDown(0) && whitchSelected[1] && !whitchSelected[2] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
+        else if (Input.GetMouseButtonDown(0) && whitchSelected[1] && !whitchSelected[2] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             br.x = Input.mousePosition.x - 300;
             br.y = Input.mousePosition.y - 140;
 
             fourSelectButtons[2].gameObject.SetActive(true);
-            fourSelectButtons[2].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, br.y-30, 60);
-            fourSelectButtons[2].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, br.x-30, 60);
+            fourSelectButtons[2].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, br.y - 30, 60);
+            fourSelectButtons[2].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, br.x - 30, 60);
             whitchSelected[2] = true;
             print("点了第3个点");
         }
-        else if(Input.GetMouseButtonDown(0) && whitchSelected[2] && !whitchSelected[3] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
+        else if (Input.GetMouseButtonDown(0) && whitchSelected[2] && !whitchSelected[3] && startSelectFourPoints && UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject == null)
         {
             bl.x = Input.mousePosition.x - 300;
             bl.y = Input.mousePosition.y - 140;
 
             fourSelectButtons[3].gameObject.SetActive(true);
-            fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, bl.y-30, 60);
-            fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, bl.x-30, 60);
+            fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, bl.y - 30, 60);
+            fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, bl.x - 30, 60);
             whitchSelected[3] = true;
             print("点了第4个点");
         }
@@ -464,11 +514,11 @@ public class ClickListener : MonoBehaviour
 
     private void OnGUI()
     {
-        if(open)
+        if (open)
         {
-            GUI.DrawTexture(new UnityEngine.Rect(300, 140, borderRawImage, borderRawImage),currentWebCam,ScaleMode.StretchToFill);
+            GUI.DrawTexture(new UnityEngine.Rect(300, 140, borderRawImage, borderRawImage), currentWebCam, ScaleMode.StretchToFill);
         }
-        if(transformed)
+        if (transformed)
         {
             //GUI.DrawTexture(new UnityEngine.Rect(300, 140, borderRawImage, borderRawImage), transformTexture, ScaleMode.StretchToFill);
         }
@@ -477,18 +527,18 @@ public class ClickListener : MonoBehaviour
 
     public void Deselect()
     {
-        print("点击了选择点:"+ UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name);
-        if(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("tlPoint"))
+        print("点击了选择点:" + UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name);
+        if (UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("tlPoint"))
         {
             fourSelectButtons[0].gameObject.SetActive(false);
             whitchSelected[0] = false;
         }
-        else if(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("trPoint"))
+        else if (UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("trPoint"))
         {
             fourSelectButtons[1].gameObject.SetActive(false);
             whitchSelected[1] = false;
         }
-        else if(UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("brPoint"))
+        else if (UnityEngine.EventSystems.EventSystem.current.currentSelectedGameObject.name.Equals("brPoint"))
         {
             fourSelectButtons[2].gameObject.SetActive(false);
             whitchSelected[2] = false;
