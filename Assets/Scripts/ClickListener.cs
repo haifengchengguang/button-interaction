@@ -46,9 +46,9 @@ public class ClickListener : MonoBehaviour
     public static bool isVRPlayer = true;
     public static bool sureLoadMap = false;
     public static bool is2Player = false;
-    public static int kinectHeight;
-    public static int playerHeight;
-    public static String serverIP;
+    public static int kinectHeight=50;
+    public static int playerHeight=170;
+    public static String serverIP="127.0.0.1";
 
     int count = 0;
     bool photoed = false;

@@ -46,11 +46,11 @@ public class globlaScript : MonoBehaviour
     Vector3[] coinPositions = new Vector3[5];
     //接收金币个数 随机生成两个从2开始 2,3,4
     private int receiveNum = 2;
-    int leftCount = 2, getCount = 0;
+    int leftCount = 5, getCount = 0;
     //高度
-    private float height=ClickListener.playerHeight+0.2f;
+    private float height=ClickListener.playerHeight/100+0.2f;
     //玩家数量
-    private bool OnlyVR = ClickListener.is2Player;
+    private bool OnlyVR = !ClickListener.is2Player;
     private void Awake()
     {
 
@@ -100,8 +100,8 @@ public class globlaScript : MonoBehaviour
                 {
                     int lIndexOfCoin = me.Receive(buffer);
                     int indexOfCoin=(int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lIndexOfCoin));
-                    int coinX = (indexOfCoin / 4 + 1)*2-5;
-                    float coinZ = 10.5f-2*(indexOfCoin % 4 + 1);
+                    int coinX = (indexOfCoin % 4 + 1)*2-5;
+                    float coinZ = 10.5f-2*(indexOfCoin / 4 + 1);
                     if (receiveNum < 5)
                     {
                         coinPositions[receiveNum]=new Vector3(coinX, height, coinZ);
@@ -249,21 +249,23 @@ public class globlaScript : MonoBehaviour
                 wallGameObjects[i].SetActive(false);
             }
         }
-        socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
-        Thread.Sleep(20);
-        socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
+        // socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
+        // Thread.Sleep(20);
+        // socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
         int coinArrayLength = 2;
         if (OnlyVR)
         {
            coinArrayLength = 5;
         }
-        Random random = new Random();
+        print("coinArrayLength"+coinArrayLength);
+        Random random = new Random(Guid.NewGuid().GetHashCode());
         int []coinArray=new int[coinArrayLength];
         for (int i = 0; i < coinArrayLength; i++)
         {
             coinArray[i] = random.Next(0, 15);
-            int coinX_i = (coinArray[i] / 4 + 1)*2-5;
-            float coinZ_i = 10.5f - 2 * (coinArray[i] % 4 + 1);
+            Debug.Log("coinArray["+i+"]"+coinArray[i]);
+            int coinX_i = (coinArray[i] % 4 + 1)*2-5;
+            float coinZ_i = 10.5f - 2 * (coinArray[i] / 4 + 1);
             coinPositions[i] = new Vector3(coinX_i, height, coinZ_i);
             coinGameObjects[i].transform.position = coinPositions[i];
         }

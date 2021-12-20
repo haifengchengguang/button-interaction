@@ -12470,44 +12470,44 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c060651c6ad3a8418b638d0bdccd1a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rawImage: {fileID: 0}
-  tipText: {fileID: 0}
-  wallPanel: {fileID: 0}
-  selectPanel: {fileID: 0}
+  rawImage: {fileID: 1496475059}
+  tipText: {fileID: 1261825043}
+  wallPanel: {fileID: 1408147085}
+  selectPanel: {fileID: 1875102642}
   startInfoPanel: {fileID: 1184423398}
   wallButtons:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 2118056065}
+  - {fileID: 195486358}
+  - {fileID: 698231422}
+  - {fileID: 715409643}
+  - {fileID: 254633768}
+  - {fileID: 855694991}
+  - {fileID: 713381967}
+  - {fileID: 1247478464}
+  - {fileID: 1460676061}
+  - {fileID: 1113597154}
+  - {fileID: 843221966}
+  - {fileID: 1534287382}
+  - {fileID: 1319084926}
+  - {fileID: 1977871064}
+  - {fileID: 531698361}
+  - {fileID: 1766101112}
+  - {fileID: 1458138708}
+  - {fileID: 2093887196}
+  - {fileID: 1306658193}
+  - {fileID: 1631087929}
+  - {fileID: 91098894}
+  - {fileID: 42478770}
+  - {fileID: 523095591}
+  - {fileID: 610782509}
   fourSelectButtons:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 2016478112}
+  - {fileID: 497543014}
+  - {fileID: 220240042}
+  - {fileID: 761010892}
   kinectHeightInputField: {fileID: 2105878681}
   serverIpInputField: {fileID: 329452165}
-  playerHeightInputField: {fileID: 0}
+  playerHeightInputField: {fileID: 1790926046}
   currentPlayerNumText: {fileID: 298180529}
   currentPlayerIdentityText: {fileID: 18197771}
 --- !u!1 &1875102642
