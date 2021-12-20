@@ -107,7 +107,10 @@ public class globlaScript : MonoBehaviour
                         coinPositions[receiveNum]=new Vector3(coinX, height, coinZ);
                         coinGameObjects[receiveNum].transform.position = coinPositions[receiveNum];
                         receiveNum++;
+                        leftCount++;
+
                     }
+                    
 
                 }
                 // //接收高度
@@ -252,15 +255,21 @@ public class globlaScript : MonoBehaviour
         // socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
         // Thread.Sleep(20);
         // socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
-        int coinArrayLength = 2;
+        
         if (OnlyVR)
         {
-           coinArrayLength = 5;
+           
         }
-        print("coinArrayLength"+coinArrayLength);
+        else
+        {
+            leftCount = 2;
+        }
+
+        info1.text = "场上剩余 "+leftCount;
+        print("coinArrayLength"+leftCount);
         Random random = new Random(Guid.NewGuid().GetHashCode());
-        int []coinArray=new int[coinArrayLength];
-        for (int i = 0; i < coinArrayLength; i++)
+        int []coinArray=new int[leftCount];
+        for (int i = 0; i < leftCount; i++)
         {
             coinArray[i] = random.Next(0, 15);
             Debug.Log("coinArray["+i+"]"+coinArray[i]);
