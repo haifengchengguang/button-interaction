@@ -51,6 +51,10 @@ public class globlaScript : MonoBehaviour
     private float height=ClickListener.playerHeight/100+0.2f;
     //玩家数量
     private bool OnlyVR = !ClickListener.is2Player;
+    //陷阱位置
+    private int trapIndex=0;
+    private int trapX=999;
+    private float trapZ=999.0f;
     private void Awake()
     {
 
@@ -153,6 +157,14 @@ public class globlaScript : MonoBehaviour
                 {
                     int lOnlyVR = me.Receive(buffer);
                     OnlyVR=Convert.ToBoolean(Encoding.ASCII.GetString(buffer, 0, lOnlyVR));
+                }
+                else if(instruction.Equals("./trap"))
+                {
+                    int lTrap = me.Receive(buffer);
+                    trapIndex=(int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lTrap));
+                    trapX = (trapIndex % 4 + 1)*2-5;
+                    trapZ = 10.5f-2*(trapIndex / 4 + 1);
+                    
                 }
             }
         } catch (Exception e)
@@ -409,6 +421,14 @@ public class globlaScript : MonoBehaviour
             //发送游戏结束
             String success = "success";
             socket.Send(Encoding.ASCII.GetBytes("./success"));
+            Thread.Sleep(20);
+            socket.Send(Encoding.ASCII.GetBytes(success));
+        }
+        if (getCount == 5&&Math.Abs(x-trapX)<1&&Math.Abs(z-trapZ)<1)
+        {
+            //发送游戏结束
+            String success = "fail";
+            socket.Send(Encoding.ASCII.GetBytes("./fail"));
             Thread.Sleep(20);
             socket.Send(Encoding.ASCII.GetBytes(success));
         }
