@@ -153,11 +153,11 @@ public class globlaScript : MonoBehaviour
                 //     height=(float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lheight));
                 //
                 // }
-                else if(instruction.Equals("./OnlyVR"))
-                {
-                    int lOnlyVR = me.Receive(buffer);
-                    OnlyVR=Convert.ToBoolean(Encoding.ASCII.GetString(buffer, 0, lOnlyVR));
-                }
+                // else if(instruction.Equals("./OnlyVR"))
+                // {
+                //     int lOnlyVR = me.Receive(buffer);
+                //     OnlyVR=Convert.ToBoolean(Encoding.ASCII.GetString(buffer, 0, lOnlyVR));
+                // }
                 else if(instruction.Equals("./trap"))
                 {
                     int lTrap = me.Receive(buffer);
@@ -199,6 +199,9 @@ public class globlaScript : MonoBehaviour
             socket.Connect(new IPEndPoint(ip, 8885));
             Thread myThread = new Thread(ListenMessage);
             myThread.Start(socket);
+            socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
+            Thread.Sleep(20);
+            socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
             socket.Send(Encoding.ASCII.GetBytes("./isVRPlayer"));
             Thread.Sleep(20);
             socket.Send(Encoding.ASCII.GetBytes(ClickListener.isVRPlayer.ToString()));
@@ -296,9 +299,7 @@ public class globlaScript : MonoBehaviour
                 wallGameObjects[i].SetActive(false);
             }
         }
-        // socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
-        // Thread.Sleep(20);
-        // socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
+        
         
         if (OnlyVR)
         {
