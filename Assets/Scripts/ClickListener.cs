@@ -46,8 +46,8 @@ public class ClickListener : MonoBehaviour
     public static bool isVRPlayer = true;
     public static bool sureLoadMap = false;
     public static bool is2Player = false;
-    public static int kinectHeight=50;
-    public static int playerHeight=170;
+    public static float kinectHeight=0.5f;
+    public static float playerHeight=1.7f;
     public static String serverIP="127.0.0.1";
 
     int count = 0;
@@ -447,11 +447,20 @@ public class ClickListener : MonoBehaviour
         kinectHeightInputField = GameObject.Find("kinectHeightInputField").GetComponent<InputField>();
         playerHeightInputField = GameObject.Find("playerHeightInputField").GetComponent<InputField>();
         serverIpInputField = GameObject.Find("serverIpInputField").GetComponent<InputField>();
-        kinectHeight = Convert.ToInt32(kinectHeightInputField.text);
-        playerHeight = Convert.ToInt32(playerHeightInputField.text);
+        kinectHeight = Convert.ToInt32(kinectHeightInputField.text)/100.0f;
+        playerHeight = Convert.ToInt32(playerHeightInputField.text)/100.0f;
+        print("收到的高度除以100后：" + playerHeight);
         serverIP = serverIpInputField.text;
         //传迷宫信息
-        UnityEngine.SceneManagement.SceneManager.LoadScene("HelloVR");
+        if(isVRPlayer)
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("HelloVR");
+        }
+        else
+        {
+            UnityEngine.SceneManagement.SceneManager.LoadScene("Observer");
+        }
+        
     }
 
     public void returnToStartPage()

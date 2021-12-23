@@ -30,6 +30,7 @@ public class globlaScript : MonoBehaviour
     public Text info1;
     public Text info2;
     public AudioSource coinSound;
+    public GameObject theMainCamera;
 
 
     //public Camera camera;
@@ -38,7 +39,7 @@ public class globlaScript : MonoBehaviour
     byte[] buffer = new byte[1024];
 
     //头
-    float x = -1, y = 1.6f, z = 2.5f;
+    float x = 0.3f, y = 1.2f, z = 1.8f;
 
     //手
     float handx = -1, handy = 1.6f, handz = 2.5f;
@@ -52,7 +53,7 @@ public class globlaScript : MonoBehaviour
     int leftCount = 5, getCount = 0;
 
     //高度
-    private float height = ClickListener.playerHeight / 100 + 0.2f;
+    private float height = ClickListener.playerHeight + 0.2f;
 
     //玩家数量
     private bool OnlyVR = !ClickListener.is2Player;
@@ -109,8 +110,7 @@ public class globlaScript : MonoBehaviour
                 //instruction
                 int length = me.Receive(buffer);
                 string instruction = Encoding.ASCII.GetString(buffer, 0, length);
-                //Debug.Log("收到指令=" + instruction);
-
+                //print("收到了指令:" + instruction);
                 if (instruction.Equals("./location")) //收位置信息
                 {
                     int lx = me.Receive(buffer);
@@ -134,7 +134,7 @@ public class globlaScript : MonoBehaviour
 
                     isHandClose = true;
                     //判断放在update
-                    print("收到了手");
+                    //print("收到了手");
                 }
                 //接收金币
                 else if (instruction.Equals("./coin") && OnlyVR == false)
@@ -191,8 +191,33 @@ public class globlaScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        gameObject.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
+        theMainCamera.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
         if (OnlyVR)
         {
+            wallCount = 0;
+            for (int i = 0; i < 24; i++)
+            {
+                if (ClickListener.wallsState[i] == 1)
+                {
+                    tempWalls[wallCount] = i;
+                    wallCount++;
+                }
+            }
+            //直接更新墙体
+            int tempIndex = 0;
+            for (int i = 0; i < 24; i++)
+            {
+                if (i == tempWalls[tempIndex] && tempIndex < wallCount)
+                {
+                    wallGameObjects[i].SetActive(true);
+                    tempIndex++;
+                }
+                else
+                {
+                    wallGameObjects[i].SetActive(false);
+                }
+            }
         }
         else
         {
@@ -218,20 +243,22 @@ public class globlaScript : MonoBehaviour
         XRSettings.enabled = true;
         try
         {
+            print("连接socket");
             IPAddress ip = IPAddress.Parse(ClickListener.serverIP);
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             //socket.Connect(new IPEndPoint(ip, 18189)); //配置服务器IP与端口
             socket.Connect(new IPEndPoint(ip, 8885));
-            Thread myThread = new Thread(ListenMessage);
-            myThread.Start(socket);
 
+            print("socket连接成功");
             socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
             Thread.Sleep(20);
             if (OnlyVR == true)
             {
+                print("only One");
             }
             else
             {
+                print("two players");
                 //socket.Send(Encoding.ASCII.GetBytes("./OnlyVR"));
 
                 // socket.Send(Encoding.ASCII.GetBytes("./isVRPlayer"));
@@ -244,6 +271,7 @@ public class globlaScript : MonoBehaviour
                 Thread.Sleep(20);
                 if (ClickListener.sureLoadMap)
                 {
+                    print("upload map");
                     wallCount = 0;
                     for (int i = 0; i < 24; i++)
                     {
@@ -258,18 +286,15 @@ public class globlaScript : MonoBehaviour
                     {
                         //只发需要的墙体index
                         //发送总数量
-                        socket.Send(Encoding.ASCII.GetBytes("./wallCount"));
-                        Thread.Sleep(20);
+                        print("发送墙体");
                         socket.Send(Encoding.ASCII.GetBytes(wallCount.ToString()));
                         Thread.Sleep(50);
                         for (int i = 0; i < wallCount; i++)
                         {
-                            socket.Send(Encoding.ASCII.GetBytes("./tempWalls"));
-                            Thread.Sleep(20);
                             socket.Send(Encoding.ASCII.GetBytes(tempWalls[i].ToString()));
                             Thread.Sleep(50);
                         }
-
+                        print("发完墙体");
                         // //入口index，出口index
                         // socket.Send(Encoding.ASCII.GetBytes("./entranceIndex"));
                         // Thread.Sleep(20);
@@ -286,6 +311,7 @@ public class globlaScript : MonoBehaviour
                 }
                 else
                 {
+                    print("不传墙体，从socket收");
                     try
                     {
                         //如果自己没传则接收墙体
@@ -299,16 +325,16 @@ public class globlaScript : MonoBehaviour
                             tempWalls[i] = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, dataLength));
                         }
 
-                        dataLength = socket.Receive(buffer);
-                        startWall = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, dataLength));
-                        dataLength = socket.Receive(buffer);
-                        endWall = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, dataLength));
+                        //dataLength = socket.Receive(buffer);
+                        //startWall = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, dataLength));
+                        //dataLength = socket.Receive(buffer);
+                        //endWall = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, dataLength));
                     }
                     catch (Exception e)
                     {
                     }
                 }
-
+                print("更新墙体显示");
                 //更新墙体
                 int tempIndex = 0;
                 for (int i = 0; i < 24; i++)
@@ -336,8 +362,9 @@ public class globlaScript : MonoBehaviour
             warnText.text = e.Message;
         }
 
+        Thread myThread = new Thread(ListenMessage);
+        myThread.Start(socket);
 
-        
 
         // if (OnlyVR == false)
         // {
@@ -372,43 +399,27 @@ public class globlaScript : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //i++;
-        //transform.Translate(Vector3.forward*(i%5), Space.World);//Slef和World都是一直在反复运动
-        //transform.Translate(new Vector3(x*-1.62f*z, y*1.62f*z, z), Space.World);//1.62太大了，现实中移动了1m，游戏中移动了3m+，不太合理，但是要求是重定向，在游戏内可以走很远。映射到unity里6*6如何，8*8？
-        //Debug.Log("./location x=" + x + "             y=" + y + "            z=" + z);
-        if (z == 2.5f) //没有连接kinect时不移动
-        {
-        }
-        else //收到kinect数据导致z！=2.5，按收的数据产生平移---需要设置各参数 比如如下的1.2、3.3等（12.18日晚测试3.3太大，其实是因为忘记考虑1.5的问题了）
-        {
-            transform.position =
-                new Vector3(x * -1.2f * z, y * 1.2f * z,
-                    (z - 1.5f) * 3.3f + 1.5f); //1.62时 225cm对应游戏内8m边界，此时z有1.5，z应等于2.5。所以1.62不止225对应240大，对应于1.5与2.5也偏大。
-        }
-        //每隔deltaTime长时间更新坐标
+        //  tan35 = 0.70  tan30 = 0.577           tan29 = 0.55    tan22 = 0.404  后者组太大了 
+        //!!!!!!!!!!!!!!!不是像素比例。可能已经附带了z
+        //transform.position = new Vector3(x * (-0.55f) * z * 3.33f, y * 0.4f * z + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
+        transform.position = new Vector3(x * (-1.4f) * 3.33f, y * 1.4f + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
 
-
-        //判断手
         if (isHandClose)
         {
+            print("hand映射前   " + handx + "  " + handy + "  " + handz);
             //映射手的坐标
-            /*
-            handx = handx * -1.2f * handz;
-            handy = handy * 1.2f * handz;
-            */
-            handx = -1;
-            handy = 2;
-            handz = 2.5f;
-            //print("hand   " +handx+"  "+handy+"  "+handz);
+            handx = handx * (-0.4f) * handz * 3.33f;
+            handy = handy * 0.4f * handz + ClickListener.kinectHeight;
+            handz = (handz - 1.5f) * 3.33f + 1.5f;
+            //print("hand映射后   " + handx + "  " + handy + "  " + handz);
 
 
-            //判断位置   < 1就判断为捡到了可能太容易了
             for (int i = 0; i < 5; i++)
             {
                 if ( /*coinGameObjects[i].isActive*/coinPositions[i].y != -2 &&
-                                                    Math.Abs(coinPositions[i].x - handx) < 1 &&
-                                                    Math.Abs(coinPositions[i].y - handy) < 1 &&
-                                                    Math.Abs(coinPositions[i].z - handz) < 1) //如果y不是-2
+                                                    Math.Abs(coinPositions[i].x - handx) < 2 &&
+                                                    Math.Abs(coinPositions[i].y - handy) < 2 &&
+                                                    Math.Abs(coinPositions[i].z - handz) < 2) //如果y不是-2
                 {
                     //发送i
                     socket.Send(Encoding.ASCII.GetBytes("./getCoin"));
@@ -428,7 +439,7 @@ public class globlaScript : MonoBehaviour
                 }
             }
             //关闭手
-            //isHandClose = false;
+            isHandClose = false;
         }
 
         if (getCount == 5 && Math.Abs(x - 3) < 1 && Math.Abs(z - 8.5) < 1)

@@ -1604,6 +1604,7 @@ MonoBehaviour:
   info1: {fileID: 822070555}
   info2: {fileID: 763488422}
   coinSound: {fileID: 1528215869}
+  theMainCamera: {fileID: 959308587}
 --- !u!1 &947062674
 GameObject:
   m_ObjectHideFlags: 0
@@ -2039,6 +2040,7 @@ MonoBehaviour:
   info1: {fileID: 0}
   info2: {fileID: 0}
   coinSound: {fileID: 0}
+  theMainCamera: {fileID: 0}
 --- !u!81 &959308589
 AudioListener:
   m_ObjectHideFlags: 0
@@ -3064,7 +3066,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1589841568}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 15, y: -0.3, z: 0}
+  m_LocalPosition: {x: 15, y: 0, z: 0}
   m_LocalScale: {x: 8, y: 1, z: 8}
   m_Children:
   - {fileID: 1589940872}
@@ -4446,7 +4448,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &624028475469553489
 Transform:
   m_ObjectHideFlags: 0
@@ -5851,7 +5853,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!33 &2221725949558894923
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -10792,7 +10794,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3745495801552727204}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -3, y: 0, z: 1.5}
+  m_LocalPosition: {x: -3, y: 0.5, z: 1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 3745495801795539101}
