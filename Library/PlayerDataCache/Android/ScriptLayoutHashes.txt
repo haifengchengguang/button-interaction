@@ -1,6 +1,6 @@
 Android
 PlayerPath?
-C:/Users/zxz/Desktop/test2.apk
+C:/Users/zxz/Desktop/test1.apk
 SceneListBegin?
 Assets/Scenes/SampleScene.unity
 Assets/Scenes/HelloVR.unity
@@ -201,7 +201,7 @@ ad9173d3a69d99153f38ed4b62226129 UnityEngine.Networking.dll:UnityEngine.Networki
 71bb6a6b6c8f052f948db64c7dd3ca4f Assembly-CSharp.dll:.InitCam
 71bb6a6b6c8f052f948db64c7dd3ca4f Assembly-CSharp.dll:OpenCVForUnityExample.OpenPoseExample
 bf3913f0d6c694bf20e1d681c79a4993 Assembly-CSharp.dll:GoogleVR.HelloVR.ObjectController
-4994f7ba09a3406f3020e80e3c6c0313 Assembly-CSharp.dll:.ObserverCoinControl
+18503dcb53da125f572d477ac853dd84 Assembly-CSharp.dll:.ObserverCoinControl
 a9f049c3dc82bb36fdb142e4d6a2658d Unity.TextMeshPro.dll:TMPro.TMP_FontAsset
 e1300922cc039f41ab46a47f4cb05898 Unity.TextMeshPro.dll:TMPro.TMP_Settings
 71bb6a6b6c8f052f948db64c7dd3ca4f Assembly-CSharp.dll:.GvrControllerTooltipsSimple

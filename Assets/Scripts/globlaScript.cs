@@ -32,6 +32,7 @@ public class globlaScript : MonoBehaviour
     public Text info2;
     public AudioSource coinSound;
     public GameObject theMainCamera;
+    public GameObject dog;
 
 
     //public Camera camera;
@@ -158,52 +159,44 @@ public class globlaScript : MonoBehaviour
                 {
                     try
                     {
-
+                        int lIndexOfCoin = me.Receive(buffer);
+                        int indexOfCoin = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lIndexOfCoin));
+                        int coinX = (indexOfCoin % 4 + 1) * 2 - 5;
+                        float coinZ = 10.5f - 2 * (indexOfCoin / 4 + 1);
+                        if (receiveNum < 5)
+                        {
+                            coinPositions[receiveNum] = new Vector3(coinX, height, coinZ);
+                            coinGameObjects[receiveNum].transform.position = coinPositions[receiveNum];
+                            receiveNum++;
+                            leftCount++;
+                            warnText.text = "有一个新金币生成";
+                            warnText.gameObject.SetActive(true);
+                        }
                     }
                     catch (Exception e1)
                     {
                         print(e1.Message);
                     }
-                    int lIndexOfCoin = me.Receive(buffer);
-                    int indexOfCoin = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lIndexOfCoin));
-                    int coinX = (indexOfCoin % 4 + 1) * 2 - 5;
-                    float coinZ = 10.5f - 2 * (indexOfCoin / 4 + 1);
-                    if (receiveNum < 5)
-                    {
-                        coinPositions[receiveNum] = new Vector3(coinX, height, coinZ);
-                        coinGameObjects[receiveNum].transform.position = coinPositions[receiveNum];
-                        receiveNum++;
-                        leftCount++;
-                        warnText.text = "有一个新金币生成";
-                        warnText.gameObject.SetActive(true);
-                    }
+
                 }
-                // //接收高度
-                // else if(instruction.Equals("./height"))
-                // {
-                //     int lheight = me.Receive(buffer);
-                //     height=(float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lheight));
-                //
-                // }
-                // else if(instruction.Equals("./OnlyVR"))
-                // {
-                //     int lOnlyVR = me.Receive(buffer);
-                //     OnlyVR=Convert.ToBoolean(Encoding.ASCII.GetString(buffer, 0, lOnlyVR));
-                // }
                 else if (instruction.Equals("./trap"))
                 {
                     try
                     {
+                        //把收到的端点赋值给全局变量，另外修改全局变量的值，比如dogTrapIsActive = true;
+                        int lTrap = me.Receive(buffer);
+                        trapIndex = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lTrap));
+                        trapX = (trapIndex % 4 + 1) * 2 - 5;
+                        trapZ = 10.5f - 2 * (trapIndex / 4 + 1);
 
+                        //这两行不用改，留着↓
+                        warnText.text = "迷宫中出现了友好小动物，不要踩到它！";
+                        warnText.gameObject.SetActive(true);
                     }
                     catch (Exception e1)
                     {
                         print(e1.Message);
                     }
-                    int lTrap = me.Receive(buffer);
-                    trapIndex = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lTrap));
-                    trapX = (trapIndex % 4 + 1) * 2 - 5;
-                    trapZ = 10.5f - 2 * (trapIndex / 4 + 1);
                 }
             }
         }
@@ -287,7 +280,7 @@ public class globlaScript : MonoBehaviour
 
             print("socket连接成功");
             socket.Send(Encoding.ASCII.GetBytes(OnlyVR.ToString()));
-            Thread.Sleep(20);
+            Thread.Sleep(50);
             if (OnlyVR == true)
             {
                 print("only One");
@@ -300,11 +293,11 @@ public class globlaScript : MonoBehaviour
                 // socket.Send(Encoding.ASCII.GetBytes("./isVRPlayer"));
                 // Thread.Sleep(20);
                 socket.Send(Encoding.ASCII.GetBytes(ClickListener.isVRPlayer.ToString()));
-                Thread.Sleep(20);
+                Thread.Sleep(50);
                 // socket.Send(Encoding.ASCII.GetBytes("./sureLoadMap"));
                 // Thread.Sleep(20);
                 socket.Send(Encoding.ASCII.GetBytes(ClickListener.sureLoadMap.ToString()));
-                Thread.Sleep(20);
+                Thread.Sleep(50);
                 if (ClickListener.sureLoadMap)
                 {
                     print("upload map");
@@ -385,9 +378,9 @@ public class globlaScript : MonoBehaviour
                         wallGameObjects[i].SetActive(false);
                     }
                 }
-                Thread.Sleep(20);
+                Thread.Sleep(50);
                 socket.Send(Encoding.ASCII.GetBytes(coinArray[0].ToString()));
-                Thread.Sleep(20);
+                Thread.Sleep(50);
                 socket.Send(Encoding.ASCII.GetBytes(coinArray[1].ToString()));
             }
         }
@@ -406,14 +399,36 @@ public class globlaScript : MonoBehaviour
     {
         //  tan35 = 0.70  tan30 = 0.577           tan29 = 0.55    tan22 = 0.404 
         transform.position = new Vector3(x * (0.7f) * z * 3.33f, y * 0.577f * z + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
-        //if(isHandClose)
-        //{
-        //    handx = handx * (-0.7f) * handz * 3.33f;
-        //    handy = handy * 0.577f * handz + ClickListener.kinectHeight;
-        //    handz = (handz - 1.5f) * 3.33f + 1.5f;
-        //    transform.position = new Vector3(handx, handy, handz);
-        //}
+        
 
+        //这四行变量都要改为全局变量
+        bool dogTrapIsActive = false;
+        float speed = 0;//注意deltaTime单位是毫秒
+        int start = 9, end = 1;//模拟从socket收到的两端点值
+        int direction = 1;
+        if(dogTrapIsActive)
+        {
+            /*
+                移动方法1：修改本身坐标
+                dog.transform.position = new Vector3(Time.deltaTime * speed + dog.transform.position.x, 0, 0);
+                移动方法2：平移--更简单点，因为修改本身坐标你还要计算该往哪走
+                dog.transform.Translate(new Vector3(Time.deltaTime * speed * 1, 0, Time.deltaTime * speed * 1),Space.World);
+                通过狗的两个端点判断，来确定应该在x轴方向上走还是z轴方向上走
+            */
+            if(end - start <= 3)//x轴上走
+            {
+                dog.transform.Translate(new Vector3(Time.deltaTime * speed * direction, 0, 0), Space.World);
+            }
+            else// if((end-start) % 4 == 0)//在z轴上走
+            {
+                dog.transform.Translate(new Vector3(0, 0, Time.deltaTime * speed * direction), Space.World);
+            }
+            if(true)//如果走到头，需要转180
+            {
+                direction = -direction;
+                //dog.transform.rotation = ...//狗的模型也要转
+            }
+        }
 
 
         if (warnText.IsActive() && (warnTextTime < warnTextMaxTime))
@@ -445,7 +460,7 @@ public class globlaScript : MonoBehaviour
                 {
                     //发送i
                     socket.Send(Encoding.ASCII.GetBytes("./getCoin"));
-                    Thread.Sleep(20);
+                    Thread.Sleep(50);
                     socket.Send(Encoding.ASCII.GetBytes(i.ToString()));
                     //消除金币，y坐标置为-2
                     coinGameObjects[i].transform.position = new Vector3(0, -2, 0);
@@ -470,7 +485,7 @@ public class globlaScript : MonoBehaviour
             //发送游戏结束
             String success = "success";
             socket.Send(Encoding.ASCII.GetBytes("./success"));
-            Thread.Sleep(20);
+            Thread.Sleep(50);
             socket.Send(Encoding.ASCII.GetBytes(success));
         }
 
@@ -479,7 +494,7 @@ public class globlaScript : MonoBehaviour
             //发送游戏结束
             String success = "fail";
             socket.Send(Encoding.ASCII.GetBytes("./fail"));
-            Thread.Sleep(20);
+            Thread.Sleep(50);
             socket.Send(Encoding.ASCII.GetBytes(success));
         }
     }
