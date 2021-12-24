@@ -23,7 +23,7 @@ public class ObserverCoinControl : MonoBehaviour
     
     public GameObject[] coins = new GameObject[5];//五个金币实体
     private int[] coinPosition = new int[5];//存放金币在哪个块上，初始为-1，在unity中设置初始化
-    public static int coinIndex;//用来标记生成金币得索引，当前正在生成哪个金币
+    public static int coinIndex = 0;//用来标记生成金币得索引，当前正在生成哪个金币
     //public int coinAcquireIndex;//用来接收金币销毁得索引
 
     public GameObject player;   //游戏者
@@ -48,7 +48,7 @@ public class ObserverCoinControl : MonoBehaviour
     int leftCount = 2, canMakeCoinNum = 3, collectionNum = 0;
 
 
-    private void ListenMessage(object socket)//======================================================收消息
+    private void ListenMessage(object socket)
     {
         Socket me = (Socket)socket;
         try
@@ -60,61 +60,58 @@ public class ObserverCoinControl : MonoBehaviour
                 //Debug.Log("收到指令=" + instruction);
                 if (instruction.Equals("./location"))//收位置信息
                 {
-                    //收player的x,y坐标
-                    int lx = me.Receive(buffer);
-                    reX = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
-                    int ly = me.Receive(buffer);
-                    reY = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
-                    //修改坐标在update
+                    try
+                    {
+                        //收player的x,y坐标
+                        int lx = me.Receive(buffer);
+                        reX = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
+                        int ly = me.Receive(buffer);
+                        reY = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
+                    }
+                    catch(Exception e)
+                    {
 
+                    }
                 }
-                //else if (instruction.Equals("./coin"))//接收金币信息--接收两个区块
-                //{
-                //    //接收前两个金币的位置信息
-                //    for(int i = 0; i < 2; i++)
-                //    {
-                //        coinIndex++;
-                //        int coinp = me.Receive(buffer);
-                //        coinPosition[i] = (int)Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, coinp));
-                //    }
-
-                //}
                 else if (instruction.Equals("./getCoin"))//当获得金币以后，每次传给一个位置,根据位置进行查找然后删除
                 {
-                    int tempIndex = me.Receive(buffer);
-                    //接收得是需要销毁得金币得位置
-                    int temP = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, tempIndex));
-
-                    //遍历当前的金币索引，判断是否有该位置的金币
-                    for(int i = 0; i < 5; i++)
+                    try
                     {
-                        if(coinPosition[i] == temP)//找到了这个金币
-                        {
-                            //销毁
-                            coins[i].SetActive(false);
-                            //那么当前的位置就可以继续放置新的金币
-                            coinPosition[i] = -1;
-                        }
-                    }
+                        int tempIndex = me.Receive(buffer);
+                        //接收得是需要销毁得金币得位置
+                        int temP = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, tempIndex));
 
+                        coinPosition[temP] = -1;
+                        //销毁
+                        coins[temP].SetActive(false);
+                        collectionNum++;//收集金币数加一
+                        gameStateText3.text = "玩家已经收集了 " + collectionNum + "个金币";
+                        leftCount--;
+                        gameStateText.text = "场上剩余 " + leftCount;
+                    }
+                    catch(Exception e)
+                    {
+
+                    }
                 }
                 else if (instruction.Equals("./trap")) //接收陷阱位置
                 {
 
                 }
-                else if (instruction.Equals("./success"))//成功
+                else if (instruction.Equals("./gameOver"))//收到游戏结束的信息
                 {
-                    //玩家走出迷宫，完成了任务，观察者显示完成
+                    //收游戏结果
                     int num = me.Receive(buffer);
-                    string successTip = Encoding.ASCII.GetString(buffer, 0, num);
-                    tipText.text = "游戏结束，玩家走出了迷宫，游戏" + successTip;
-                }
-                else if (instruction.Equals("./gameOver"))//游戏者失败
-                {
-                    //玩家未走出迷宫，没有完成任务，观察者显示失败信息
-                    int num = me.Receive(buffer);
-                    string failTip = Encoding.ASCII.GetString(buffer, 0, num);
-                    tipText.text = "游戏结束，玩家未走出了迷宫，游戏" + failTip;
+                    string gameState = Encoding.ASCII.GetString(buffer, 0, num);
+                    if(gameState.Equals("success"))
+                    {
+                        tipText.text = "游戏结束，玩家未走出了迷宫";
+                    }
+                    else if(gameState.Equals("fail"))
+                    {
+                        tipText.text = "游戏结束，玩家触发了陷阱";
+                    }
+                    
                 }
 
             }
@@ -156,7 +153,7 @@ public class ObserverCoinControl : MonoBehaviour
             }
 
             //初始化player
-            player.SetActive(false);
+            //player.SetActive(false);
 
             //初始化字幕
             tipText.text = "主角未进场，等待游戏开始-----";
@@ -183,24 +180,23 @@ public class ObserverCoinControl : MonoBehaviour
             //给添加陷阱按钮绑定事件
 
             //客户端连接服务器
-            IPAddress ip = IPAddress.Parse("127.0.0.1");
+            IPAddress ip = IPAddress.Parse(ClickListener.serverIP);
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             //socket.Connect(new IPEndPoint(ip, 18189)); //配置服务器IP与端口
             socket.Connect(new IPEndPoint(ip, 8885));
-            Thread myThread = new Thread(ListenMessage);//该线程负责接收信息
-            myThread.Start(socket);
+
 
             //开局发俩false-表示不是单人且不是VR
-            socket.Send(Encoding.ASCII.GetBytes(false.ToString()));
+            socket.Send(Encoding.ASCII.GetBytes("False"));
             Thread.Sleep(20);
-            socket.Send(Encoding.ASCII.GetBytes(false.ToString()));
+            socket.Send(Encoding.ASCII.GetBytes("False"));
             Thread.Sleep(20);
 
             //只发需要的墙体index
             //发送总数量
             wallCount = socket.Receive(buffer);
             wallCount = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, wallCount));
-
+            print("收到墙体数量：" + wallCount);
             int temp = 0;
             int WallIndex = -1;
             //接收每个墙体-将墙体setActive设置为true
@@ -219,6 +215,7 @@ public class ObserverCoinControl : MonoBehaviour
             {
                 //顺序接收金币的位置
                 reCoin = socket.Receive(buffer);
+                print(Encoding.ASCII.GetString(buffer, 0, reCoin));
                 cointemP = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, reCoin));
                 coinPosition[coinIndex] = cointemP; //记下该金币的位置
                 //将金币放到固定位置
@@ -232,6 +229,8 @@ public class ObserverCoinControl : MonoBehaviour
                 coinIndex++;
             }
 
+            Thread myThread = new Thread(ListenMessage);//该线程负责接收信息
+            myThread.Start(socket);
         }
         catch (Exception e)
         {
@@ -294,9 +293,9 @@ public class ObserverCoinControl : MonoBehaviour
             {
                 // 设置提示框，提醒用户操作--
                 //UnityEditor.EditorUtility.DisplayDialog("提示", "当前位置不能制造金币", "确认", "取消");
-                UnityEditor.EditorUtility.DisplayDialog("提示", "当前不能再制造金币了，添加金币按钮失灵了", "确认", "取消");
+                //UnityEditor.EditorUtility.DisplayDialog("提示", "当前不能再制造金币了，添加金币按钮失灵了", "确认", "取消");
 
-                tipHelp.text = "正在游戏中，当前不能制造金币了---";
+                tipHelp.text = "放置金币机会已用完";
                 
                 //禁用16个区域的按钮
                 for (int i = 0; i < buttonArea.Length; i++)
@@ -358,7 +357,7 @@ public class ObserverCoinControl : MonoBehaviour
             {
                 if(coinPosition[i] == s11)
                 {
-                    UnityEditor.EditorUtility.DisplayDialog("提示", "当前位置已经有金币了，不能再制造金币了！", "确认", "取消");
+                    //UnityEditor.EditorUtility.DisplayDialog("提示", "当前位置已经有金币了，不能再制造金币了！", "确认", "取消");
                     tipHelp.text = "当前位置已经有金币了，不能再制造金币了！";
                     isnew = false;
                 }
@@ -404,7 +403,7 @@ public class ObserverCoinControl : MonoBehaviour
         else
         {
             //提示当前不能制造金币了
-            UnityEditor.EditorUtility.DisplayDialog("提示", "当前不能再制造金币了，添加金币按钮失灵了", "确认", "取消");
+            //UnityEditor.EditorUtility.DisplayDialog("提示", "当前不能再制造金币了，添加金币按钮失灵了", "确认", "取消");
             Debug.Log("不能制造金币了--");
         }
     }
@@ -412,8 +411,8 @@ public class ObserverCoinControl : MonoBehaviour
     private int[] CalculateCoinPosition(int indexOfBlock)
     {
         int[] result = new int[2];
-        result[0] = indexOfBlock / 4 * 225 - 337;
-        result[1] = indexOfBlock % 4 * -225 + 337;
+        result[1] = indexOfBlock / 4 * 225 - 337;
+        result[0] = indexOfBlock % 4 * (-225) + 337;
         return result;
     }
  

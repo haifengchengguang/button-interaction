@@ -330,6 +330,9 @@ public class ClickListener : MonoBehaviour
         }
         selectPanel.SetActive(false);
         startSelectFourPoints = false;
+
+
+        tipText.text = "如果透视变换符合期望可以自动识别 / 手动调整墙体";
     }
 
     public IEnumerator GetTexture()
@@ -388,6 +391,7 @@ public class ClickListener : MonoBehaviour
         }
         wallPanel.SetActive(true);
         selecting = true;
+        tipText.text = "如若要使用迷宫，请点击上传";
     }
 
     public void SelectBoxSwitch()
@@ -401,6 +405,7 @@ public class ClickListener : MonoBehaviour
         {
             wallPanel.SetActive(false);
         }
+        tipText.text = "如若要使用迷宫，请点击上传";
     }
 
 
@@ -416,6 +421,7 @@ public class ClickListener : MonoBehaviour
     public void Upload()
     {
         sureLoadMap = true;
+        tipText.text = "已确认应用此次生成的迷宫，请点击确定并选择角色";
     }
 
     public void onePlayer()
@@ -447,9 +453,10 @@ public class ClickListener : MonoBehaviour
         kinectHeightInputField = GameObject.Find("kinectHeightInputField").GetComponent<InputField>();
         playerHeightInputField = GameObject.Find("playerHeightInputField").GetComponent<InputField>();
         serverIpInputField = GameObject.Find("serverIpInputField").GetComponent<InputField>();
-        kinectHeight = Convert.ToInt32(kinectHeightInputField.text)/100.0f;
-        playerHeight = Convert.ToInt32(playerHeightInputField.text)/100.0f;
-        print("收到的高度除以100后：" + playerHeight);
+        if(!kinectHeightInputField.text.Equals(""))
+            kinectHeight = Convert.ToInt32(kinectHeightInputField.text)/100.0f;
+        if(!playerHeightInputField.text.Equals(""))
+            playerHeight = Convert.ToInt32(playerHeightInputField.text)/100.0f;
         serverIP = serverIpInputField.text;
         //传迷宫信息
         if(isVRPlayer)
@@ -522,6 +529,7 @@ public class ClickListener : MonoBehaviour
             fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Bottom, bl.y - 30, 60);
             fourSelectButtons[3].GetComponent<RectTransform>().SetInsetAndSizeFromParentEdge(RectTransform.Edge.Left, bl.x - 30, 60);
             whitchSelected[3] = true;
+            tipText.text = "点选完成后请再次点击透视变换";
             print("点了第4个点");
         }
     }

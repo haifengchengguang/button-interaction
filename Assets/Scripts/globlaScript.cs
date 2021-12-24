@@ -27,6 +27,7 @@ public class globlaScript : MonoBehaviour
     public GameObject[] edgeGameObjects = new GameObject[16];
     public GameObject[] coinGameObjects = new GameObject[5];
     public Text warnText;
+    float warnTextTime = 0, warnTextMaxTime = 3;
     public Text info1;
     public Text info2;
     public AudioSource coinSound;
@@ -39,11 +40,11 @@ public class globlaScript : MonoBehaviour
     byte[] buffer = new byte[1024];
 
     //头
-    float x = 0.3f, y = 1.2f, z = 1.8f;
+    float x = -0.238f, y = 1.2f, z = 1.8f;
 
     //手
-    float handx = -1, handy = 1.6f, handz = 2.5f;
-    bool isHandClose = true;
+    float handx = 0, handy = 0, handz = 0;
+    bool isHandClose = false;
 
     Vector3[] coinPositions = new Vector3[5];
 
@@ -113,32 +114,56 @@ public class globlaScript : MonoBehaviour
                 //print("收到了指令:" + instruction);
                 if (instruction.Equals("./location")) //收位置信息
                 {
-                    int lx = me.Receive(buffer);
-                    x = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
-                    int ly = me.Receive(buffer);
-                    y = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
-                    int lz = me.Receive(buffer);
-                    z = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
+                    try
+                    {
+                        int lx = me.Receive(buffer);
+                        x = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
+                        int ly = me.Receive(buffer);
+                        y = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
+                        int lz = me.Receive(buffer);
+                        z = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
+                    }
+                    catch(Exception e1)
+                    {
+                        print(e1.Message);
+                    }
+
                     //Debug.Log("./location x=" + x + "      y=" + y + "     z=" + z);
 
                     //修改坐标在update
                 }
                 else if (instruction.Equals("./hand")) //收手势信息--可以改碰撞模式
                 {
-                    int lx = me.Receive(buffer);
-                    handx = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
-                    int ly = me.Receive(buffer);
-                    handy = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
-                    int lz = me.Receive(buffer);
-                    handz = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
+                    try
+                    {
+                        int lx = me.Receive(buffer);
+                        handx = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lx));
+                        int ly = me.Receive(buffer);
+                        handy = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, ly));
+                        int lz = me.Receive(buffer);
+                        handz = (float)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lz));
 
-                    isHandClose = true;
+                        isHandClose = true;
+                    }
+                    catch (Exception e1)
+                    {
+                        print(e1.Message);
+                    }
+
                     //判断放在update
                     //print("收到了手");
                 }
                 //接收金币
                 else if (instruction.Equals("./coin") && OnlyVR == false)
                 {
+                    try
+                    {
+
+                    }
+                    catch (Exception e1)
+                    {
+                        print(e1.Message);
+                    }
                     int lIndexOfCoin = me.Receive(buffer);
                     int indexOfCoin = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lIndexOfCoin));
                     int coinX = (indexOfCoin % 4 + 1) * 2 - 5;
@@ -149,6 +174,8 @@ public class globlaScript : MonoBehaviour
                         coinGameObjects[receiveNum].transform.position = coinPositions[receiveNum];
                         receiveNum++;
                         leftCount++;
+                        warnText.text = "有一个新金币生成";
+                        warnText.gameObject.SetActive(true);
                     }
                 }
                 // //接收高度
@@ -165,6 +192,14 @@ public class globlaScript : MonoBehaviour
                 // }
                 else if (instruction.Equals("./trap"))
                 {
+                    try
+                    {
+
+                    }
+                    catch (Exception e1)
+                    {
+                        print(e1.Message);
+                    }
                     int lTrap = me.Receive(buffer);
                     trapIndex = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lTrap));
                     trapX = (trapIndex % 4 + 1) * 2 - 5;
@@ -237,6 +272,7 @@ public class globlaScript : MonoBehaviour
             coinPositions[i] = new Vector3(coinX_i, height, coinZ_i);
             coinGameObjects[i].transform.position = coinPositions[i];
         }
+        warnText.text = "场上已随机生成  " + leftCount + "  个金币";
         // Random random1 = new Random(Guid.NewGuid().GetHashCode());
         // for(int i=0;i<100;i++)
         // {print("i="+i+" random1.Next(0,15))="+random1.Next(0,15));}
@@ -349,7 +385,6 @@ public class globlaScript : MonoBehaviour
                         wallGameObjects[i].SetActive(false);
                     }
                 }
-                //socket.Send(Encoding.ASCII.GetBytes("./twoCoins"));
                 Thread.Sleep(20);
                 socket.Send(Encoding.ASCII.GetBytes(coinArray[0].ToString()));
                 Thread.Sleep(20);
@@ -364,62 +399,49 @@ public class globlaScript : MonoBehaviour
 
         Thread myThread = new Thread(ListenMessage);
         myThread.Start(socket);
-
-
-        // if (OnlyVR == false)
-        // {
-        //    
-        // }
-        // int a = random.Next(0, 15);
-        // int b = random.Next(0, 15);
-        // Debug.Log("a="+a);
-        // Debug.Log("b="+b);
-        // int coinX_a = (a / 4 + 1)*2-5;
-        // float coinZ_a = 10.5f-2*(a % 4 + 1);
-        // int coinX_b = (b / 4 + 1) * 2 - 5;
-        // float coinZ_b = 10.5f - 2*(a % 4 + 1);
-        // coinPositions[0] = new Vector3(coinX_a, height, coinZ_a);
-        // coinPositions[1] = new Vector3(coinX_b, height, coinZ_b);
-        // coinGameObjects[0].transform.position = coinPositions[0];
-        // coinGameObjects[1].transform.position = coinPositions[1];
-        /*
-        //随机生成两个金币位置-----------------------------------------------------------------------------------------------有bug，查随机数API---
-        coinPositions[0] = new Vector3(new System.Random().Next(-1,2)*2-1, 3, new System.Random().Next(1,4)*2+0.5f);
-        coinPositions[1] = new Vector3(new System.Random().Next(-1,2)*2-1, 3, new System.Random().Next(1,4)*2+0.5f);
-        coinGameObjects[0].transform.position = coinPositions[0];
-        coinGameObjects[1].transform.position = coinPositions[1];
-        */
-        //因为有bug所以设了几个测试值
-        // coinPositions[0] = new Vector3(-1, 2, 2.5f);
-        // coinPositions[1] = new Vector3(-1, 2, 2.5f);
-        // coinGameObjects[0].transform.position = new Vector3(-1, 2, 2.5f);
-        // coinGameObjects[1].transform.position = new Vector3(-1, 2, 2.5f);
     }
 
     // Update is called once per frame
     void Update()
     {
-        //  tan35 = 0.70  tan30 = 0.577           tan29 = 0.55    tan22 = 0.404  后者组太大了 
-        //!!!!!!!!!!!!!!!不是像素比例。可能已经附带了z
-        //transform.position = new Vector3(x * (-0.55f) * z * 3.33f, y * 0.4f * z + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
-        transform.position = new Vector3(x * (-1.4f) * 3.33f, y * 1.4f + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
+        //  tan35 = 0.70  tan30 = 0.577           tan29 = 0.55    tan22 = 0.404 
+        transform.position = new Vector3(x * (0.7f) * z * 3.33f, y * 0.577f * z + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
+        //if(isHandClose)
+        //{
+        //    handx = handx * (-0.7f) * handz * 3.33f;
+        //    handy = handy * 0.577f * handz + ClickListener.kinectHeight;
+        //    handz = (handz - 1.5f) * 3.33f + 1.5f;
+        //    transform.position = new Vector3(handx, handy, handz);
+        //}
+
+
+
+        if (warnText.IsActive() && (warnTextTime < warnTextMaxTime))
+        {
+            warnTextTime += Time.deltaTime;
+        }
+        else
+        {
+            warnTextTime = 0;
+            warnText.gameObject.SetActive(false);
+        }
 
         if (isHandClose)
         {
-            print("hand映射前   " + handx + "  " + handy + "  " + handz);
+            //print("hand映射前   " + handx + "  " + handy + "  " + handz);
             //映射手的坐标
-            handx = handx * (-0.4f) * handz * 3.33f;
-            handy = handy * 0.4f * handz + ClickListener.kinectHeight;
+            handx = handx * (0.7f) * handz * 3.33f;
+            handy = handy * 0.577f * handz + ClickListener.kinectHeight;
             handz = (handz - 1.5f) * 3.33f + 1.5f;
             //print("hand映射后   " + handx + "  " + handy + "  " + handz);
 
 
             for (int i = 0; i < 5; i++)
             {
-                if ( /*coinGameObjects[i].isActive*/coinPositions[i].y != -2 &&
-                                                    Math.Abs(coinPositions[i].x - handx) < 2 &&
-                                                    Math.Abs(coinPositions[i].y - handy) < 2 &&
-                                                    Math.Abs(coinPositions[i].z - handz) < 2) //如果y不是-2
+                if ( /*coinGameObjects[i].isActive*/coinGameObjects[i].active && coinPositions[i].y != -2 &&
+                                                    Math.Abs(coinPositions[i].x - handx) < 0.7 &&
+                                                    Math.Abs(coinPositions[i].y - handy) < 0.5 &&
+                                                    Math.Abs(coinPositions[i].z - handz) < 0.7) //如果y不是-2
                 {
                     //发送i
                     socket.Send(Encoding.ASCII.GetBytes("./getCoin"));
@@ -428,6 +450,7 @@ public class globlaScript : MonoBehaviour
                     //消除金币，y坐标置为-2
                     coinGameObjects[i].transform.position = new Vector3(0, -2, 0);
                     coinPositions[i].y = -2;
+                    coinGameObjects[i].SetActive(false);
                     //coinGameObjects[i].SetActive(false);
                     //播放声音
                     coinSound.Play();
