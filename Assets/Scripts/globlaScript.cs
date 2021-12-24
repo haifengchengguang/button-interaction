@@ -33,8 +33,10 @@ public class globlaScript : MonoBehaviour
     public AudioSource coinSound;
     public GameObject theMainCamera;
     public GameObject dog;
-
-
+    public Image image;
+    public Sprite success;
+    public Sprite fail;
+    public GameObject foot;
     //public Camera camera;
     Socket socket;
     bool isVrPlayer;
@@ -60,11 +62,13 @@ public class globlaScript : MonoBehaviour
     //玩家数量
     private bool OnlyVR = !ClickListener.is2Player;
 
-    //陷阱位置
-    private int trapIndex = 0;
-    private int trapX = 999;
-    private float trapZ = 999.0f;
-
+    
+    //
+    bool dogTrapIsActive = false;
+    float speed = 0.001f;//注意deltaTime单位是毫秒
+    int direction = 1;
+    private bool isMoveOnX;
+    private float max = 0, min = 0;
     private void Awake()
     {
     }
@@ -185,12 +189,57 @@ public class globlaScript : MonoBehaviour
                     {
                         //把收到的端点赋值给全局变量，另外修改全局变量的值，比如dogTrapIsActive = true;
                         int lTrap = me.Receive(buffer);
-                        trapIndex = (int)Convert.ToDouble(Encoding.ASCII.GetString(buffer, 0, lTrap));
-                        trapX = (trapIndex % 4 + 1) * 2 - 5;
-                        trapZ = 10.5f - 2 * (trapIndex / 4 + 1);
+                        int start = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, lTrap));
+                        int end = Convert.ToInt32(Encoding.ASCII.GetString(buffer, 0, lTrap)); 
+                        int trapX = (start % 4 + 1) * 2 - 5;
+                        float trapZ = 10.5f - 2 * (start / 4 + 1);
+                        int trapXEnd=(end % 4 + 1) * 2 - 5;
+                        float trapZEnd = 10.5f - 2 * (end / 4 + 1);
+                        dog.transform.position = new Vector3(trapX, 0.1f, trapZ);
+                        dogTrapIsActive = true;
 
-                        //这两行不用改，留着↓
-                        warnText.text = "迷宫中出现了友好小动物，不要踩到它！";
+                        Quaternion faceTo;
+                        // max min
+                        if (end - start >= -3 && end - start <= 3) //x轴上走
+                        {
+                            isMoveOnX = true;
+                            if (start > end)
+                            {
+                                max = trapX;
+                                min = trapXEnd;
+                                faceTo = Quaternion.Euler(0,-90 , 0);
+                                direction = -1;
+                            }
+                            else
+                            {
+                                max = trapXEnd;
+                                min = trapX;
+                                faceTo = Quaternion.Euler(0,90 , 0);
+                                direction = 1;
+                            }
+                        }
+                        else//z轴
+                        {
+                            isMoveOnX = false;
+                            if (start > end)
+                            {
+                                max = trapZEnd;
+                                min = trapZ;
+                                faceTo = Quaternion.Euler(0,0 , 0);
+                                direction = 1;
+                            }
+                            else
+                            {
+                                max = trapZ;
+                                min = trapZEnd;
+                                faceTo = Quaternion.Euler(0,-180 , 0);
+                                direction = -1;
+                            }
+                        }
+                        //初始化朝向
+                        dog.transform.rotation = faceTo;
+
+                        warnText.text = "迷宫中出现了友好小动物，不要踩到它！(跳或绕路)";
                         warnText.gameObject.SetActive(true);
                     }
                     catch (Exception e1)
@@ -219,6 +268,7 @@ public class globlaScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        image.gameObject.SetActive(false);
         gameObject.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
         theMainCamera.transform.rotation = Quaternion.Euler(0.0f, 0.0f, 0.0f);
         if (OnlyVR)
@@ -399,34 +449,35 @@ public class globlaScript : MonoBehaviour
     {
         //  tan35 = 0.70  tan30 = 0.577           tan29 = 0.55    tan22 = 0.404 
         transform.position = new Vector3(x * (0.7f) * z * 3.33f, y * 0.577f * z + ClickListener.kinectHeight, (z - 1.5f) * 3.33f + 1.5f);
-        
+        if (transform.position.y >= ClickListener.playerHeight + 0.2f)
+        {
+            foot.transform.position = new Vector3(x * (0.7f) * z * 3.33f, y * 0.577f * z + ClickListener.kinectHeight -ClickListener.playerHeight, (z - 1.5f) * 3.33f + 1.5f);
+        }
+        else
+        {
+            foot.transform.position = new Vector3(x * (0.7f) * z * 3.33f, 0.2f, (z - 1.5f) * 3.33f + 1.5f);
+        }
 
-        //这四行变量都要改为全局变量
-        bool dogTrapIsActive = false;
-        float speed = 0;//注意deltaTime单位是毫秒
-        int start = 9, end = 1;//模拟从socket收到的两端点值
-        int direction = 1;
+
         if(dogTrapIsActive)
         {
-            /*
-                移动方法1：修改本身坐标
-                dog.transform.position = new Vector3(Time.deltaTime * speed + dog.transform.position.x, 0, 0);
-                移动方法2：平移--更简单点，因为修改本身坐标你还要计算该往哪走
-                dog.transform.Translate(new Vector3(Time.deltaTime * speed * 1, 0, Time.deltaTime * speed * 1),Space.World);
-                通过狗的两个端点判断，来确定应该在x轴方向上走还是z轴方向上走
-            */
-            if(end - start <= 3)//x轴上走
+            if(isMoveOnX)//x轴上走
             {
                 dog.transform.Translate(new Vector3(Time.deltaTime * speed * direction, 0, 0), Space.World);
+                if(dog.transform.position.x <= min || dog.transform.position.x >= max)//如果走到头，需要转180
+                {
+                    direction = -direction;
+                    dog.transform.rotation = Quaternion.Euler(0,dog.transform.rotation.y+180,0);
+                }
             }
-            else// if((end-start) % 4 == 0)//在z轴上走
+            else//在z轴上走
             {
                 dog.transform.Translate(new Vector3(0, 0, Time.deltaTime * speed * direction), Space.World);
-            }
-            if(true)//如果走到头，需要转180
-            {
-                direction = -direction;
-                //dog.transform.rotation = ...//狗的模型也要转
+                if(dog.transform.position.z <= min || dog.transform.position.z >= max)//如果走到头，需要转180
+                {
+                    direction = -direction;
+                    dog.transform.rotation = Quaternion.Euler(0,dog.transform.rotation.y+180,0);
+                }
             }
         }
 
@@ -480,8 +531,10 @@ public class globlaScript : MonoBehaviour
             isHandClose = false;
         }
 
-        if (getCount == 5 && Math.Abs(x - 3) < 1 && Math.Abs(z - 8.5) < 1)
+        if (getCount == 5 && Math.Abs(x - 3) < 2 && Math.Abs(z - 10.5) < 1)
         {
+            image.gameObject.SetActive(true);
+            image.sprite = this.success;
             //发送游戏结束
             String success = "success";
             socket.Send(Encoding.ASCII.GetBytes("./success"));
@@ -489,13 +542,39 @@ public class globlaScript : MonoBehaviour
             socket.Send(Encoding.ASCII.GetBytes(success));
         }
 
-        if (getCount == 5 && Math.Abs(x - trapX) < 1 && Math.Abs(z - trapZ) < 1)
-        {
-            //发送游戏结束
-            String success = "fail";
-            socket.Send(Encoding.ASCII.GetBytes("./fail"));
-            Thread.Sleep(50);
-            socket.Send(Encoding.ASCII.GetBytes(success));
+        // if (getCount == 5 && Math.Abs(x - trapX) < 1 && Math.Abs(z - trapZ) < 1)
+        // {
+        //     //发送游戏结束
+        //     String success = "fail";
+        //     socket.Send(Encoding.ASCII.GetBytes("./fail"));
+        //     Thread.Sleep(50);
+        //     socket.Send(Encoding.ASCII.GetBytes(success));
+        // }
+        // 碰撞开始
+        void OnCollisionEnter(Collision collision) {
+            // 销毁当前游戏物体
+            //Destroy(this.trap);
+            if (collision.gameObject.tag.Equals("trap"))
+            {
+                image.gameObject.SetActive(true);
+                image.sprite = fail;
+                //发送游戏结束
+                socket.Send(Encoding.ASCII.GetBytes("./fail"));
+                Thread.Sleep(50);
+                socket.Send(Encoding.ASCII.GetBytes("fail"));
+            }
+        
         }
+
+        // 碰撞结束
+        void OnCollisionExit(Collision collision) {
+
+        }
+
+        // 碰撞持续中
+        void OnCollisionStay(Collision collision) {
+
+        }
+
     }
 }
